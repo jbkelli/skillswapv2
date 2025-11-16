@@ -16,46 +16,71 @@ body.dark-theme {
 
 /* Light theme styles */
 body.light-theme {
-  background-color: #f9fafb;
-  color: rgba(0, 0, 0, 0.87);
-}
-
-body.light-theme * {
-  border-color: #e5e7eb !important;
+  background-color: #f3f4f6;
+  color: #111827;
 }
 
 /* Light theme component overrides */
 body.light-theme .bg-gray-950 {
-  background-color: #ffffff !important;
+  background-color: #f9fafb !important;
 }
 
 body.light-theme .bg-gray-900 {
-  background-color: #f3f4f6 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
 }
 
 body.light-theme .bg-gray-800 {
+  background-color: #f9fafb !important;
+}
+
+body.light-theme .bg-gray-700 {
   background-color: #e5e7eb !important;
+}
+
+/* Fix button visibility in light mode */
+body.light-theme button,
+body.light-theme .bg-gray-800,
+body.light-theme .bg-gray-700 {
+  color: #111827 !important;
+}
+
+/* Navigation links in light mode */
+body.light-theme nav button {
+  color: #374151 !important;
+}
+
+body.light-theme nav button:hover {
+  color: #2563eb !important;
 }
 
 body.light-theme .text-white {
   color: #111827 !important;
 }
 
+body.light-theme .text-gray-100 {
+  color: #1f2937 !important;
+}
+
+body.light-theme .text-gray-300 {
+  color: #4b5563 !important;
+}
+
 body.light-theme .text-gray-400 {
   color: #6b7280 !important;
 }
 
-body.light-theme .text-gray-300 {
-  color: #374151 !important;
-}
-
 body.light-theme .text-gray-500 {
-  color: #6b7280 !important;
+  color: #9ca3af !important;
 }
 
 body.light-theme .border-gray-800,
 body.light-theme .border-gray-700 {
-  border-color: #d1d5db !important;
+  border-color: #e5e7eb !important;
+}
+
+body.light-theme .border-b {
+  border-color: #e5e7eb !important;
 }
 
 body.light-theme input,
@@ -64,6 +89,42 @@ body.light-theme select {
   background-color: #ffffff !important;
   color: #111827 !important;
   border-color: #d1d5db !important;
+}
+
+body.light-theme input::placeholder,
+body.light-theme textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Hover states in light mode */
+body.light-theme .hover\:bg-gray-800:hover {
+  background-color: #e5e7eb !important;
+}
+
+body.light-theme .hover\:bg-gray-700:hover {
+  background-color: #d1d5db !important;
+}
+
+body.light-theme .hover\:bg-gray-600:hover {
+  background-color: #9ca3af !important;
+}
+
+body.light-theme .bg-blue-600:hover,
+body.light-theme .hover\:bg-blue-500:hover {
+  background-color: #2563eb !important;
+}
+
+body.light-theme .bg-red-600:hover,
+body.light-theme .hover\:bg-red-700:hover {
+  background-color: #dc2626 !important;
+}
+
+/* Light mode text on colored backgrounds should stay white */
+body.light-theme .bg-blue-600 *,
+body.light-theme .bg-red-600 *,
+body.light-theme .bg-purple-600 *,
+body.light-theme .bg-green-600 * {
+  color: #ffffff !important;
 }
 
 :root {

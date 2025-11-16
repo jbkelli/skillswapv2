@@ -25,6 +25,22 @@ export default function ContactPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess(false);
+
+    // Validate all fields
+    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+      setError('All fields are required');
+      setLoading(false);
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch('http://localhost:5000/api/contact/send', {
@@ -40,11 +56,11 @@ export default function ContactPage() {
         setFormData({ name: '', email: '', subject: '', message: '' });
         setTimeout(() => setSuccess(false), 5000);
       } else {
-        setError(data.message || 'Failed to send message. Please check your email configuration.');
+        setError(data.message || 'Failed to send message. Please try again.');
       }
     } catch (err) {
       console.error('Contact form error:', err);
-      setError('Failed to send message. Make sure the server is running and email is configured.');
+      setError('Failed to send message. Please make sure the server is running.');
     }
 
     setLoading(false);

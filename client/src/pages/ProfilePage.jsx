@@ -83,7 +83,7 @@ export default function ProfilePage() {
     setSuccess('');
 
     try {
-      await userService.updateProfile({
+      const response = await axios.put('http://localhost:5000/api/users/profile/update', {
         firstName: formData.firstName,
         lastName: formData.lastName,
         bio: formData.bio,
@@ -97,6 +97,10 @@ export default function ProfilePage() {
         },
         skillsHave,
         skillsWant
+      }, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
 
       setSuccess('Profile updated successfully!');
