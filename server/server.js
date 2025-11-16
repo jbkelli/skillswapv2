@@ -17,16 +17,37 @@ const aiRoutes = require('./routes/ai.routes');
 const app = express();
 const server = http.createServer(app);
 
+// Allowed origins for CORS
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:3000',
+    process.env.CLIENT_URL, // Your deployed frontend URL
+].filter(Boolean); // Remove undefined values
+
 // Setup Socket.io with CORS
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5174",
-        methods: ["GET", "POST"]
+        origin: allowedOrigins,
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
 //middleware of the app
-app.use(cors());//enabling all cors requests to prevent block
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}));
 app.use(express.json()); //allow our app to accept json format
 
 // Make io accessible in routes
@@ -56,6 +77,7 @@ const uri = process.env.MONGODB_URI;
 mongoose.connect(uri)
     .then(() => {
         console.log('Connected to MongoDB⚡ ');
+        console.log('Database:', mongoose.connection.name);
 
         //start the server after DB is connected
         server.listen(PORT, () => {
@@ -63,7 +85,7 @@ mongoose.connect(uri)
         });
     })
     .catch((err) => {
-        console.error('Database connection error:❌ ', err)
+        console.error('Database connection error:❌ ', err.message)
     })
 
 // Socket.io connection handling

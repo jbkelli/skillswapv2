@@ -7,8 +7,9 @@ import Header from '../components/Header';
 import NeuralBackground from '../components/NeuralBackground';
 import Footer from '../components/Footer';
 import AIChatbot from '../components/AIChatbot';
+import { SOCKET_URL } from '../config/api';
 
-const socket = io('http://localhost:5000');
+const socket = io(SOCKET_URL);
 
 export default function ChatPage() {
   const { userId } = useParams();
@@ -147,11 +148,12 @@ export default function ChatPage() {
     <div className="min-h-screen bg-gray-950 text-white flex flex-col relative">
       <NeuralBackground />
       
-      <div className="relative z-10 flex flex-col flex-1">
+      <div className="relative z-10 flex flex-col h-screen">
         <Header />
         
         {/* Chat User Info Bar */}
-        <div className="bg-gray-800 border-b border-gray-700 py-3 px-6 shrink-0">\n          <div className="max-w-4xl mx-auto flex items-center gap-4">
+        <div className="bg-gray-800 border-b border-gray-700 py-3 px-6 shrink-0">
+          <div className="max-w-4xl mx-auto flex items-center gap-4">
             <button 
               onClick={() => navigate('/dashboard')}
               className="text-gray-400 hover:text-white transition-colors"
@@ -173,7 +175,8 @@ export default function ChatPage() {
         </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 max-w-4xl w-full mx-auto">\n        <div className="space-y-4">
+      <div className="flex-1 overflow-y-auto px-6 py-4 max-w-4xl w-full mx-auto">
+        <div className="space-y-4">
           {messages.map((msg, idx) => {
             const isMyMessage = msg.sender._id === user.id;
             return (
@@ -237,12 +240,12 @@ export default function ChatPage() {
           </button>
         </form>
       </div>
-      
+
       <Footer />
     </div>
-    
-    {/* AI Chatbot - Inline Mode */}
-    <AIChatbot inChatMode={true} />
+
+    {/* AI Chatbot - Floating Mode */}
+    <AIChatbot />
   </div>
   );
 }

@@ -36,7 +36,7 @@ router.post('/send', async (req, res) => {
         const mailOptions = {
             from: process.env.EMAIL_USER,
             replyTo: email,
-            to: '444mwangialvinm@gmail.com',
+            to: '444mwangialvinm@gmail.com, tech.marval.innovations@gmail.com',
             subject: `SkillSwap Contact: ${subject}`,
             html: `
                 <h2>New Contact Form Submission</h2>

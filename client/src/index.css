@@ -38,22 +38,6 @@ body.light-theme .bg-gray-700 {
   background-color: #e5e7eb !important;
 }
 
-/* Fix button visibility in light mode */
-body.light-theme button,
-body.light-theme .bg-gray-800,
-body.light-theme .bg-gray-700 {
-  color: #111827 !important;
-}
-
-/* Navigation links in light mode */
-body.light-theme nav button {
-  color: #374151 !important;
-}
-
-body.light-theme nav button:hover {
-  color: #2563eb !important;
-}
-
 body.light-theme .text-white {
   color: #111827 !important;
 }
@@ -114,9 +98,14 @@ body.light-theme .hover\:bg-blue-500:hover {
   background-color: #2563eb !important;
 }
 
+/* Keep red buttons red in light mode */
+body.light-theme .bg-red-600 {
+  background-color: #dc2626 !important;
+}
+
 body.light-theme .bg-red-600:hover,
 body.light-theme .hover\:bg-red-700:hover {
-  background-color: #dc2626 !important;
+  background-color: #b91c1c !important;
 }
 
 /* Light mode text on colored backgrounds should stay white */

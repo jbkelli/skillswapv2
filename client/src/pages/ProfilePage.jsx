@@ -7,6 +7,7 @@ import SkillInput from '../components/SkillInput';
 import Header from '../components/Header';
 import NeuralBackground from '../components/NeuralBackground';
 import Footer from '../components/Footer';
+import { allLocations } from '../data/locations';
 
 export default function ProfilePage() {
   const { user: currentUser } = useAuth();
@@ -83,7 +84,7 @@ export default function ProfilePage() {
     setSuccess('');
 
     try {
-      const response = await axios.put('http://localhost:5000/api/users/profile/update', {
+      await userService.updateProfile({
         firstName: formData.firstName,
         lastName: formData.lastName,
         bio: formData.bio,
@@ -97,10 +98,6 @@ export default function ProfilePage() {
         },
         skillsHave,
         skillsWant
-      }, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
       });
 
       setSuccess('Profile updated successfully!');
@@ -119,10 +116,11 @@ export default function ProfilePage() {
       
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update profile');
+      console.error('Profile update error:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -223,14 +221,25 @@ export default function ProfilePage() {
                     required
                   />
                 </div>
-                <AuthInput
-                  icon="📍"
-                  type="text"
-                  name="location"
-                  placeholder="Location (e.g., Nairobi, Kenya)"
-                  value={formData.location}
-                  onChange={handleChange}
-                />
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lg">📍</div>
+                  <select
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    className="w-full bg-gray-800 border border-gray-700 text-gray-300 rounded-lg py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
+                  >
+                    <option value="">Select Location</option>
+                    {allLocations.map((location, idx) => (
+                      <option key={idx} value={location}>{location}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
 
               {/* Bio */}

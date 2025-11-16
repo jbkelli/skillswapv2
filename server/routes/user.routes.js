@@ -55,6 +55,9 @@ router.put('/profile/update', authMiddleware, async (req, res) => {
     try {
         const { firstName, lastName, bio, profilePic, location, contacts, skillsHave, skillsWant } = req.body;
 
+        console.log('Updating profile for user:', req.user.id);
+        console.log('Update data:', { firstName, lastName, bio, location, contacts, skillsHave, skillsWant });
+
         // Build update object
         const updateFields = {};
         if (firstName) updateFields.firstName = firstName;
@@ -69,16 +72,22 @@ router.put('/profile/update', authMiddleware, async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(
             req.user.id,
             { $set: updateFields },
-            { new: true }
+            { new: true, runValidators: true }
         ).select('-password');
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        console.log('Profile updated successfully');
 
         res.status(200).json({ 
             message: 'Profile updated successfully',
             user: updatedUser 
         });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error updating profile' });
+        console.error('Profile update error:', err);
+        res.status(500).json({ message: err.message || 'Server error updating profile' });
     }
 });
 

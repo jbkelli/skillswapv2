@@ -56,7 +56,8 @@ export default function Header() {
               {/* Power Button Logout */}
               <button 
                 onClick={logout} 
-                className="bg-red-600 p-2 rounded-lg hover:bg-red-700 transition-colors"
+                className="p-2 rounded-lg hover:bg-red-700 transition-colors"
+                style={{ backgroundColor: '#dc2626' }}
                 title="Logout"
               >
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

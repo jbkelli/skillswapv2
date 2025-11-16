@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NeuralBackground from '../components/NeuralBackground';
 import Footer from '../components/Footer';
+import Header from '../components/Header';
+import { API_BASE_URL } from '../config/api';
 
 export default function ContactPage() {
   const { logout, isAuthenticated } = useAuth();
@@ -25,25 +27,9 @@ export default function ContactPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setSuccess(false);
-
-    // Validate all fields
-    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-      setError('All fields are required');
-      setLoading(false);
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
-      setLoading(false);
-      return;
-    }
 
     try {
-      const response = await fetch('http://localhost:5000/api/contact/send', {
+      const response = await fetch(`${API_BASE_URL}/api/contact/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -56,11 +42,11 @@ export default function ContactPage() {
         setFormData({ name: '', email: '', subject: '', message: '' });
         setTimeout(() => setSuccess(false), 5000);
       } else {
-        setError(data.message || 'Failed to send message. Please try again.');
+        setError(data.message || 'Failed to send message. Please check your email configuration.');
       }
     } catch (err) {
       console.error('Contact form error:', err);
-      setError('Failed to send message. Please make sure the server is running.');
+      setError('Failed to send message. Make sure the server is running and email is configured.');
     }
 
     setLoading(false);
@@ -71,57 +57,10 @@ export default function ContactPage() {
       <NeuralBackground />
       
       <div className="relative z-10 flex flex-col flex-1">
+        <Header />
 
-      {/* Header */}
-      <header className="bg-gray-900 border-b border-gray-800 py-4 px-6">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-blue-500 cursor-pointer" onClick={() => navigate('/')}>
-            SkillSwap
-          </h1>
-          <nav className="flex gap-6 items-center">
-            {isAuthenticated ? (
-              <>
-                <button onClick={() => navigate('/dashboard')} className="hover:text-blue-400 transition-colors">
-                  Home
-                </button>
-                <button onClick={() => navigate('/profile')} className="hover:text-blue-400 transition-colors">
-                  Profile
-                </button>
-                <button onClick={() => navigate('/requests')} className="hover:text-blue-400 transition-colors">
-                  Requests
-                </button>
-                <button onClick={() => navigate('/groups')} className="hover:text-blue-400 transition-colors">
-                  Groups
-                </button>
-                <button onClick={() => navigate('/contact')} className="hover:text-blue-400 transition-colors">
-                  Contact
-                </button>
-                <button 
-                  onClick={logout} 
-                  className="bg-red-600 p-2 rounded-lg hover:bg-red-500 transition-colors"
-                  title="Logout"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z" />
-                  </svg>
-                </button>
-              </>
-            ) : (
-              <>
-                <button onClick={() => navigate('/login')} className="hover:text-blue-400 transition-colors">
-                  Login
-                </button>
-                <button onClick={() => navigate('/signup')} className="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors">
-                  Sign Up
-                </button>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 max-w-4xl mx-auto px-6 py-12 w-full">
+        {/* Main Content */}
+        <main className="flex-1 max-w-4xl mx-auto px-6 py-12 w-full">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4">Get In Touch</h2>
           <p className="text-gray-400 text-lg">Have questions? We'd love to hear from you!</p>
@@ -205,16 +144,6 @@ export default function ContactPage() {
           <div className="mt-8 pt-8 border-t border-gray-800">
             <h3 className="text-xl font-bold mb-4">Contact Information</h3>
             <div className="flex flex-wrap gap-4 justify-center">
-              {/* Email Icon */}
-              <a
-                href="mailto:tech.marval.innovations@gmail.com"
-                className="text-gray-400 hover:text-blue-400 transition-colors p-2"
-                title="Email: tech.marval.innovations@gmail.com"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </a>
               {/* WhatsApp Icon */}
               <a
                 href="https://wa.me/254797237149"

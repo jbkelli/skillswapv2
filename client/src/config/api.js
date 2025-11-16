@@ -5,9 +5,8 @@ const API_CONFIG = {
     socketURL: 'http://localhost:5000'
   },
   production: {
-    // Update these URLs when deploying to Vercel or other platforms
-    baseURL: import.meta.env.VITE_API_URL || 'https://your-api-domain.vercel.app',
-    socketURL: import.meta.env.VITE_SOCKET_URL || 'https://your-api-domain.vercel.app'
+    baseURL: import.meta.env.VITE_API_URL || 'https://skillswapv2.onrender.com',
+    socketURL: import.meta.env.VITE_SOCKET_URL || 'https://skillswapv2.onrender.com'
   }
 };
 

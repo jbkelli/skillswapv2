@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { API_BASE_URL } from '../config/api';
 
 export default function AIChatbot({ inChatMode = false, onClose }) {
   const [isOpen, setIsOpen] = useState(inChatMode);
@@ -27,7 +28,7 @@ export default function AIChatbot({ inChatMode = false, onClose }) {
 
     try {
       // Call your AI API here (OpenAI, Claude, etc.)
-      const response = await fetch('http://localhost:5000/api/ai/chat', {
+      const response = await fetch(`${API_BASE_URL}/api/ai/chat`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -68,63 +69,96 @@ export default function AIChatbot({ inChatMode = false, onClose }) {
   };
 
   if (inChatMode) {
-    // Inline mode for chat page
+    // Button mode for chat page
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 rounded-full bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-            <span className="text-sm font-bold">V</span>
-          </div>
-          <div>
-            <h4 className="font-bold text-sm">Vally - AI Assistant</h4>
-            <p className="text-xs text-gray-400">Here to help you learn!</p>
-          </div>
-        </div>
-        
-        <div className="max-h-60 overflow-y-auto mb-3 space-y-2">
-          {messages.map((msg, idx) => (
-            <div key={idx} className={`text-sm ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
-              <div className={`inline-block px-3 py-2 rounded-lg ${
-                msg.role === 'user' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-700 text-gray-100'
-              }`}>
-                {msg.content}
-              </div>
+      <>
+        {/* Toggle Button */}
+        {!isOpen && (
+          <button
+            onClick={() => setIsOpen(true)}
+            className="mb-4 w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg hover:from-purple-500 hover:to-pink-500 transition-all flex items-center justify-center gap-2 shadow-lg"
+          >
+            <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center font-bold text-purple-600 text-xs">
+              V
             </div>
-          ))}
-          {loading && (
-            <div className="text-left">
-              <div className="inline-block px-3 py-2 rounded-lg bg-gray-700">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <span className="font-semibold">Need help? Ask Vally! 🚀</span>
+          </button>
+        )}
+
+        {/* Chat Interface */}
+        {isOpen && (
+          <div className="bg-gray-800 border border-gray-700 rounded-lg mb-4 overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center font-bold text-purple-600 text-sm">
+                  V
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm">Vally - AI Assistant</h4>
+                  <p className="text-xs text-purple-100">Here to help you learn!</p>
                 </div>
               </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-white hover:bg-white/20 rounded p-1 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+            
+            {/* Messages */}
+            <div className="max-h-80 overflow-y-auto p-4 space-y-2 bg-gray-900">
+              {messages.map((msg, idx) => (
+                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] px-3 py-2 rounded-lg text-sm ${
+                    msg.role === 'user' 
+                      ? 'bg-blue-600 text-white rounded-br-none' 
+                      : 'bg-gray-700 text-gray-100 rounded-bl-none'
+                  }`}>
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-700 px-3 py-2 rounded-lg rounded-bl-none">
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
 
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask Vally anything..."
-            className="flex-1 bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-          <button
-            onClick={handleSend}
-            disabled={loading || !input.trim()}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-500 transition-colors disabled:opacity-50 text-sm"
-          >
-            Send
-          </button>
-        </div>
-      </div>
+            {/* Input */}
+            <div className="p-3 bg-gray-800 border-t border-gray-700">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask Vally anything..."
+                  className="flex-1 bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={loading || !input.trim()}
+                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-500 transition-colors disabled:opacity-50 text-sm font-semibold"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
@@ -133,7 +167,7 @@ export default function AIChatbot({ inChatMode = false, onClose }) {
     <>
       {/* Floating Button */}
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 group">
+        <div className="fixed top-24 right-4 z-[9999] group">
           <button
             onClick={() => setIsOpen(true)}
             className="bg-linear-to-br from-purple-600 to-pink-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform"
@@ -148,9 +182,9 @@ export default function AIChatbot({ inChatMode = false, onClose }) {
         </div>
       )}
 
-      {/* Chatbot Window */}
+      {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 h-[500px] bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl z-50 flex flex-col">
+        <div className="fixed top-24 right-4 w-96 h-[500px] bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl z-[9999] flex flex-col">
           {/* Header */}
           <div className="bg-linear-to-r from-purple-600 to-pink-600 p-4 rounded-t-2xl flex justify-between items-center">
             <div className="flex items-center gap-3">
