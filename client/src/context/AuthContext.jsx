@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authService } from '../services';
+import { useNotification } from './NotificationContext';
 
 const AuthContext = createContext(null);
 
@@ -16,6 +17,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastActivity, setLastActivity] = useState(Date.now());
+  const { showNotification } = useNotification();
 
   // Session timeout: 20 minutes (in milliseconds)
   const SESSION_TIMEOUT = 20 * 60 * 1000;
@@ -69,7 +71,7 @@ export const AuthProvider = ({ children }) => {
         
         if (timeSinceLastActivity >= SESSION_TIMEOUT) {
           // Session expired
-          alert('Your session has expired due to inactivity. Please log in again.');
+          showNotification('Your session has expired due to inactivity. Please log in again.', 'warning', 6000);
           logout();
         }
       }
@@ -97,11 +99,14 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       setLastActivity(now);
       
+      showNotification(`Welcome to SkillSwap, ${user.firstName}!`, 'success');
       return { success: true };
     } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Signup failed';
+      showNotification(errorMessage, 'error');
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Signup failed' 
+        error: errorMessage
       };
     }
   };
@@ -120,11 +125,14 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       setLastActivity(now);
       
+      showNotification(`Welcome back, ${user.firstName}!`, 'success');
       return { success: true };
     } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Login failed';
+      showNotification(errorMessage, 'error');
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Login failed' 
+        error: errorMessage
       };
     }
   };
@@ -136,6 +144,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     setLastActivity(Date.now());
+    showNotification('You have been logged out successfully.', 'info');
   };
 
   const value = {

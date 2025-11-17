@@ -78,8 +78,11 @@ router.post('/login', async (req, res) => {
         //get email and password from the password
         const { email, password } = req.body;
 
+        console.log('Login attempt for email:', email);
+
         //simple validation
         if(!email || !password){
+            console.log('Missing email or password');
             return res.status(400).json({ message: 'Please enter all fields' });
 
         }
@@ -87,16 +90,22 @@ router.post('/login', async (req, res) => {
         //Find the user in the database
         const user = await User.findOne({ email: email });
         if(!user){
-            //Sow a generic message
+            console.log('User not found for email:', email);
+            //Show a generic message
             return res.status(400).json({ message: 'Invalid credentials' });
         }
+
+        console.log('User found, checking password...');
 
         //Check if the password is correct
         //using bcrypt.compare to check the hashed password
         const isMatch = await bcrypt.compare(password, user.password);
         if(!isMatch){
+            console.log('Password mismatch for user:', email);
             return res.status(400).json({ message: 'Invalid credentials' });
         }
+
+        console.log('Login successful for user:', email);
 
         //If user is valid,, create a new JWT token
         const token = jwt.sign(
