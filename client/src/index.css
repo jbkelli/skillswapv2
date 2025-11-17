@@ -2,10 +2,16 @@
 
 body {
   margin: 0;
+  padding: 0;
   min-width: 320px;
   min-height: 100vh;
   background-color: #030712;
   color: rgba(255, 255, 255, 0.87);
+  overflow-x: hidden;
+}
+
+html {
+  overflow-x: hidden;
 }
 
 /* Light theme component overrides */

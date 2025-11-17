@@ -87,8 +87,16 @@ export default function NeuralBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full -z-10 opacity-30"
-      style={{ pointerEvents: 'none' }}
+      className="fixed inset-0 w-screen h-screen z-0 opacity-40"
+      style={{ 
+        pointerEvents: 'none',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        display: 'block'
+      }}
     />
   );
 }

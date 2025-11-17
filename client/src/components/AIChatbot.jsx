@@ -167,16 +167,16 @@ export default function AIChatbot({ inChatMode = false, onClose }) {
     <>
       {/* Floating Button */}
       {!isOpen && (
-        <div className="fixed top-24 right-4 z-[9999] group">
+        <div className="fixed top-20 sm:top-24 right-2 sm:right-4 z-[9999] group">
           <button
             onClick={() => setIsOpen(true)}
-            className="bg-linear-to-br from-purple-600 to-pink-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform"
+            className="bg-linear-to-br from-purple-600 to-pink-600 text-white p-3 sm:p-4 rounded-full shadow-2xl hover:scale-110 transition-transform"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
             </svg>
           </button>
-          <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
             Feeling like breaking the zone? Chat with Vally! 💬
           </div>
         </div>
@@ -184,9 +184,9 @@ export default function AIChatbot({ inChatMode = false, onClose }) {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed top-24 right-4 w-96 h-[500px] bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl z-[9999] flex flex-col">
+        <div className="fixed top-20 sm:top-24 right-2 sm:right-4 w-[calc(100vw-1rem)] sm:w-96 max-w-md h-[70vh] sm:h-[500px] bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl z-[9999] flex flex-col">
           {/* Header */}
-          <div className="bg-linear-to-r from-purple-600 to-pink-600 p-4 rounded-t-2xl flex justify-between items-center">
+          <div className="bg-linear-to-r from-purple-600 to-pink-600 p-3 sm:p-4 rounded-t-2xl flex justify-between items-center shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center font-bold text-purple-600">
                 V

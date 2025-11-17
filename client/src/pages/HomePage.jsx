@@ -26,12 +26,19 @@ export default function HomePage() {
 
   const fetchData = async () => {
     try {
+      console.log('Fetching data from:', import.meta.env.VITE_API_URL || 'default URL');
+      console.log('Environment mode:', import.meta.env.MODE);
+      
       // Fetch all users, sent requests, and received requests in parallel
       const [usersResponse, sentRequestsResponse, receivedRequestsResponse] = await Promise.all([
         userService.getAllUsers(),
         swapService.getSentRequests(),
         swapService.getReceivedRequests()
       ]);
+
+      console.log('Users response:', usersResponse);
+      console.log('Sent requests:', sentRequestsResponse);
+      console.log('Received requests:', receivedRequestsResponse);
 
       const users = usersResponse.users;
       const sentReqs = sentRequestsResponse.requests;
@@ -61,7 +68,9 @@ export default function HomePage() {
       setDiscoverUsers(sortUsersByMatch(discoverList));
       setLoading(false);
     } catch (err) {
-      setError('Failed to load data');
+      console.error('Error fetching data:', err);
+      console.error('Error details:', err.response?.data || err.message);
+      setError('Failed to load data: ' + (err.response?.data?.message || err.message));
       setLoading(false);
     }
   };
@@ -159,17 +168,17 @@ export default function HomePage() {
   ])].sort();
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white relative flex flex-col">
+    <div className="min-h-screen text-white relative flex flex-col" style={{ backgroundColor: '#030712' }}>
       <NeuralBackground />
       
       <div className="relative z-10 flex flex-col flex-1">
         <Header />
 
         {/* Main Content */}
-        <main className="flex-1 max-w-7xl mx-auto px-6 py-8">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold mb-2">Welcome, {user?.firstName}!</h2>
-            <p className="text-gray-400">Find your perfect skill-swap match</p>
+        <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome, {user.firstName}!</h1>
+            <p className="text-sm sm:text-base text-gray-400">Find your perfect skill-swap match</p>
           </div>
 
           {/* Tabs */}
@@ -208,25 +217,25 @@ export default function HomePage() {
           </div>
 
           {/* Search and Filter */}
-          <div className="mb-6 flex flex-col md:flex-row gap-4">
+          <div className="mb-6 flex flex-col gap-3 sm:gap-4">
             <div className="flex-1 relative">
-              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
                 type="text"
-                placeholder="Search users by name, username, or bio..."
+                placeholder="Search users..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-800 rounded-lg px-10 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full bg-gray-900 border border-gray-800 rounded-lg px-9 sm:px-10 py-2.5 sm:py-3 text-sm sm:text-base focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             {activeTab === 'discover' && (
-              <div className="md:w-64">
+              <div className="w-full sm:w-64">
                 <select
                   value={filterSkill}
                   onChange={(e) => setFilterSkill(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base focus:outline-none focus:border-blue-500 transition-colors"
                 >
                   <option value="">All Skills</option>
                   {allSkills.map((skill, idx) => (
@@ -244,7 +253,7 @@ export default function HomePage() {
           )}
 
           {/* User Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6\">
             {filteredUsers.map((otherUser) => {
               const pendingRequest = getPendingRequest(otherUser._id);
               const isSwappie = activeTab === 'swappies';
@@ -252,17 +261,17 @@ export default function HomePage() {
               return (
                 <div
                   key={otherUser._id}
-                  className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-blue-500 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20"
+                  className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-6 hover:border-blue-500 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20"
                 >
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold">
+                  <div className="flex items-center gap-3 sm:gap-4 mb-4">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg sm:text-2xl font-bold flex-shrink-0">
                       {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
                     </div>
-                    <div>
-                      <h3 className="text-xl font-bold">{otherUser.firstName} {otherUser.lastName}</h3>
-                      <p className="text-gray-400 text-sm">@{otherUser.username}</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-base sm:text-xl font-bold truncate">{otherUser.firstName} {otherUser.lastName}</h3>
+                      <p className="text-gray-400 text-xs sm:text-sm truncate">@{otherUser.username}</p>
                       {isSwappie && (
-                        <span className="inline-block mt-1 bg-green-600/30 text-green-300 px-2 py-1 rounded text-xs">
+                        <span className="inline-block mt-1 bg-green-600/30 text-green-300 px-2 py-0.5 sm:py-1 rounded text-xs">
                           ✓ Connected
                         </span>
                       )}
@@ -270,14 +279,14 @@ export default function HomePage() {
                   </div>
 
                   {otherUser.bio && (
-                    <p className="text-gray-300 text-sm mb-4 line-clamp-2">{otherUser.bio}</p>
+                    <p className="text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">{otherUser.bio}</p>
                   )}
 
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-blue-400 mb-2">Skills They Have:</h4>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="mb-3 sm:mb-4">
+                    <h4 className="text-xs sm:text-sm font-semibold text-blue-400 mb-2">Skills They Have:</h4>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {otherUser.skillsHave?.slice(0, 3).map((skill, idx) => (
-                        <span key={idx} className="bg-blue-600/30 text-blue-300 px-2 py-1 rounded text-xs">
+                        <span key={idx} className="bg-blue-600/30 text-blue-300 px-2 py-0.5 sm:py-1 rounded text-xs">
                           {skill}
                         </span>
                       ))}
@@ -287,11 +296,11 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-purple-400 mb-2">Wants to Learn:</h4>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="mb-3 sm:mb-4">
+                    <h4 className="text-xs sm:text-sm font-semibold text-purple-400 mb-2">Wants to Learn:</h4>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {otherUser.skillsWant?.slice(0, 3).map((skill, idx) => (
-                        <span key={idx} className="bg-purple-600/30 text-purple-300 px-2 py-1 rounded text-xs">
+                        <span key={idx} className="bg-purple-600/30 text-purple-300 px-2 py-0.5 sm:py-1 rounded text-xs">
                           {skill}
                         </span>
                       ))}
