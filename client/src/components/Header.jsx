@@ -34,7 +34,7 @@ export default function Header() {
                 Contact
               </button>
               
-              {/* Power Button Logout */
+              {/* Power Button Logout */}
               <button 
                 onClick={logout} 
                 className="p-2 rounded-lg hover:bg-red-700 transition-colors"
