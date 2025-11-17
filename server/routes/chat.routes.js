@@ -69,4 +69,19 @@ router.put('/read/:userId', authMiddleware, async (req, res) => {
     }
 });
 
+// Get unread message count
+router.get('/unread/count', authMiddleware, async (req, res) => {
+    try {
+        const unreadCount = await Message.countDocuments({
+            receiver: req.user.id,
+            read: false
+        });
+
+        res.status(200).json({ count: unreadCount });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error getting unread count' });
+    }
+});
+
 module.exports = router;

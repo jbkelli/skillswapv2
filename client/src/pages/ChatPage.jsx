@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import api from '../services/api';
 import Header from '../components/Header';
 import NeuralBackground from '../components/NeuralBackground';
@@ -14,6 +15,7 @@ const socket = io(SOCKET_URL);
 export default function ChatPage() {
   const { userId } = useParams();
   const { user } = useAuth();
+  const { showNotification } = useNotification();
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -41,6 +43,11 @@ export default function ChatPage() {
           message: data.message,
           createdAt: data.timestamp
         }]);
+        
+        // Show notification for new message
+        if (otherUser) {
+          showNotification(`New message from ${otherUser.firstName}`, 'info');
+        }
       }
     });
 

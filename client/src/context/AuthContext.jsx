@@ -126,6 +126,10 @@ export const AuthProvider = ({ children }) => {
       setLastActivity(now);
       
       showNotification(`Welcome back, ${user.firstName}!`, 'success');
+      
+      // Check for unread messages
+      checkUnreadMessages();
+      
       return { success: true };
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Login failed';
@@ -145,6 +149,22 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setLastActivity(Date.now());
     showNotification('You have been logged out successfully.', 'info');
+  };
+
+  const checkUnreadMessages = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/chat/unread/count`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const data = await response.json();
+      if (data.count > 0) {
+        showNotification(`You have ${data.count} unread message${data.count > 1 ? 's' : ''}`, 'info', 7000);
+      }
+    } catch (error) {
+      console.error('Failed to check unread messages:', error);
+    }
   };
 
   const value = {
