@@ -48,7 +48,8 @@ app.use(cors({
     },
     credentials: true
 }));
-app.use(express.json()); //allow our app to accept json format
+app.use(express.json({ limit: '10mb' })); //allow our app to accept json format with 10MB limit
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Make io accessible in routes
 app.set('io', io);

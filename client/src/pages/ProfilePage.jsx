@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userService } from '../services';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import AuthInput from '../components/AuthInput';
 import SkillInput from '../components/SkillInput';
 import Header from '../components/Header';
@@ -11,11 +12,10 @@ import { allLocations } from '../data/locations';
 
 export default function ProfilePage() {
   const { user: currentUser } = useAuth();
+  const { showNotification } = useNotification();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -40,10 +40,50 @@ export default function ProfilePage() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showNotification('Image size should be less than 5MB', 'error');
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        showNotification('Please upload a valid image file', 'error');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result);
-        setFormData({ ...formData, profilePic: reader.result });
+        // Compress image
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Resize if too large (max 800x800)
+          const maxSize = 800;
+          if (width > maxSize || height > maxSize) {
+            if (width > height) {
+              height = (height / width) * maxSize;
+              width = maxSize;
+            } else {
+              width = (width / height) * maxSize;
+              height = maxSize;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to base64 with compression (0.8 quality)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          setImagePreview(compressedDataUrl);
+          setFormData({ ...formData, profilePic: compressedDataUrl });
+        };
+        img.src = reader.result;
       };
       reader.readAsDataURL(file);
     }
@@ -69,7 +109,7 @@ export default function ProfilePage() {
       setSkillsHave(user.skillsHave || []);
       setSkillsWant(user.skillsWant || []);
     } catch (err) {
-      setError('Failed to load profile');
+      showNotification('Failed to load profile', 'error');
     }
   };
 
@@ -80,8 +120,6 @@ export default function ProfilePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
 
     try {
       await userService.updateProfile({
@@ -100,7 +138,7 @@ export default function ProfilePage() {
         skillsWant
       });
 
-      setSuccess('Profile updated successfully!');
+      showNotification('Profile updated successfully!', 'success');
       setEditing(false);
       
       // Update local storage
@@ -113,11 +151,9 @@ export default function ProfilePage() {
         skillsWant
       };
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      
-      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Profile update error:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to update profile');
+      showNotification(err.response?.data?.message || err.message || 'Failed to update profile', 'error');
     } finally {
       setLoading(false);
     }
@@ -143,18 +179,6 @@ export default function ProfilePage() {
             </button>
           )}
         </div>
-
-        {error && (
-          <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg mb-6">
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg mb-6">
-            {success}
-          </div>
-        )}
 
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
           {editing ? (
