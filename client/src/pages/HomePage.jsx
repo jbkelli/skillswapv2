@@ -264,7 +264,7 @@ export default function HomePage() {
                   className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-6 hover:border-blue-500 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20"
                 >
                   <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg sm:text-2xl font-bold flex-shrink-0">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg sm:text-2xl font-bold shrink-0">
                       {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -361,8 +361,8 @@ export default function HomePage() {
 
       <Footer />
       </div>
-      
-      {/* AI Chatbot - Vally */}
+
+      {/* AI Chatbot */}
       <AIChatbot />
     </div>
   );

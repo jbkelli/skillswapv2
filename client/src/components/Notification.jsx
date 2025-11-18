@@ -39,7 +39,7 @@ export default function Notification({ message, type = 'info', onClose, duration
   };
 
   return (
-    <div className={`fixed top-4 right-4 z-[10000] ${typeStyles[type]} text-white px-6 py-3 rounded-md shadow-lg animate-slide-in-right flex items-center gap-3 min-w-[280px] max-w-md`}>
+    <div className={`fixed top-4 right-4 z-10000 ${typeStyles[type]} text-white px-6 py-3 rounded-md shadow-lg animate-slide-in-right flex items-center gap-3 min-w-[280px] max-w-md`}>
       <div className="shrink-0">
         {icons[type]}
       </div>

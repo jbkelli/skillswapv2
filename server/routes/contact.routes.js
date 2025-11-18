@@ -26,10 +26,16 @@ router.post('/send', async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
 
+        // Validation
+        if (!name || !email || !subject || !message) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+
         // Check if email is configured
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            return res.status(500).json({ 
-                message: 'Email service not configured. Please set EMAIL_USER and EMAIL_PASS in .env file.' 
+            console.error('Email not configured - EMAIL_USER and EMAIL_PASS missing');
+            return res.status(503).json({ 
+                message: 'Email service is currently unavailable. Please try again later or contact us directly at tech.marval.innovations@gmail.com' 
             });
         }
 

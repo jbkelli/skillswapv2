@@ -3,19 +3,35 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
-  const { logout, isAuthenticated } = useAuth();
+  const { logout, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Debug: Log user data
+  console.log('Header - User data:', user);
+  console.log('Header - Profile Image:', user?.profileImage);
 
   return (
     <header className="bg-gray-900 border-b border-gray-800 py-4 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <h1 
-          className="text-xl sm:text-2xl font-bold text-blue-500 cursor-pointer" 
+        <div 
+          className="flex items-center gap-3 cursor-pointer" 
           onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')}
         >
-          SkillSwap
-        </h1>
+          {/* Show user profile image if available, otherwise show favicon */}
+          <img 
+            src={user?.profileImage || '/skillswap-favicon.svg'} 
+            alt={user?.firstName || 'SkillSwap'}
+            className="w-10 h-10 rounded-full object-cover border-2 border-blue-500"
+            onError={(e) => {
+              console.error('Image failed to load:', e.target.src);
+              e.target.src = '/skillswap-favicon.svg';
+            }}
+          />
+          <h1 className="text-xl sm:text-2xl font-bold text-blue-500">
+            SkillSwap
+          </h1>
+        </div>
         
         {/* Mobile menu button */}
         <button
