@@ -8,6 +8,8 @@ router.post('/send', authMiddleware, async (req, res) => {
     try {
         const { receiverId, message } = req.body;
 
+        console.log('Swap request received:', { senderId: req.user.id, receiverId, message });
+
         if (!receiverId) {
             return res.status(400).json({ message: 'Receiver ID is required' });
         }
@@ -31,13 +33,19 @@ router.post('/send', authMiddleware, async (req, res) => {
 
         await newRequest.save();
 
+        console.log('Swap request saved successfully:', newRequest);
+
         res.status(201).json({
             message: 'Swap request sent successfully',
             swapRequest: newRequest
         });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error sending swap request' });
+        console.error('Error sending swap request:', err);
+        console.error('Error stack:', err.stack);
+        res.status(500).json({ 
+            message: 'Server error sending swap request',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
     }
 });
 
