@@ -8,13 +8,25 @@ router.post('/send', authMiddleware, async (req, res) => {
     try {
         const { receiverId, message } = req.body;
 
-        console.log('Swap request received:', { senderId: req.user.id, receiverId, message });
+        console.log('=== SWAP REQUEST DEBUG ===');
+        console.log('Sender ID:', req.user?.id);
+        console.log('Receiver ID:', receiverId);
+        console.log('Message:', message);
+        console.log('Request body:', req.body);
+        console.log('Auth user:', req.user);
 
         if (!receiverId) {
+            console.log('ERROR: Receiver ID is missing');
             return res.status(400).json({ message: 'Receiver ID is required' });
         }
 
+        if (!req.user || !req.user.id) {
+            console.log('ERROR: User authentication failed');
+            return res.status(401).json({ message: 'Authentication required' });
+        }
+
         // Check if request already exists
+        console.log('Checking for existing request...');
         const existingRequest = await SwapRequest.findOne({
             sender: req.user.id,
             receiver: receiverId,
@@ -22,29 +34,34 @@ router.post('/send', authMiddleware, async (req, res) => {
         });
 
         if (existingRequest) {
+            console.log('ERROR: Swap request already exists');
             return res.status(400).json({ message: 'Swap request already sent' });
         }
 
+        console.log('Creating new swap request...');
         const newRequest = new SwapRequest({
             sender: req.user.id,
             receiver: receiverId,
             message: message || ''
         });
 
+        console.log('Saving to database...');
         await newRequest.save();
 
-        console.log('Swap request saved successfully:', newRequest);
+        console.log('SUCCESS: Swap request saved:', newRequest._id);
 
         res.status(201).json({
             message: 'Swap request sent successfully',
             swapRequest: newRequest
         });
     } catch (err) {
-        console.error('Error sending swap request:', err);
+        console.error('=== SWAP REQUEST ERROR ===');
+        console.error('Error message:', err.message);
+        console.error('Error name:', err.name);
         console.error('Error stack:', err.stack);
         res.status(500).json({ 
             message: 'Server error sending swap request',
-            error: process.env.NODE_ENV === 'development' ? err.message : undefined
+            error: err.message
         });
     }
 });
