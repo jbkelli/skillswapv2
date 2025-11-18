@@ -53,8 +53,8 @@ export default function ProfilePage() {
       }
 
       const reader = new FileReader();
-      reader.onloadend = () => {
-        // Compress image
+      reader.onload = (e) => {
+        // Time to compress this image
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');

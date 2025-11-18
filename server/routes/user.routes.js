@@ -3,10 +3,10 @@ const router = express.Router();
 const User = require('../models/User.model');
 const authMiddleware = require('../middleware/auth.middleware');
 
-// Get all users (for homepage matching)
+// Get all users for the discovery/matching page
 router.get('/all', authMiddleware, async (req, res) => {
     try {
-        // Get all users except the current user, excluding password
+        // Fetch everyone except the logged-in user, hide passwords
         const users = await User.find({ _id: { $ne: req.user.id } })
             .select('-password')
             .sort({ createdAt: -1 });
@@ -18,7 +18,7 @@ router.get('/all', authMiddleware, async (req, res) => {
     }
 });
 
-// Get single user by ID
+// Look up a specific user's profile
 router.get('/:id', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.params.id).select('-password');
@@ -34,7 +34,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// Get current user profile
+// Get the logged-in user's own profile
 router.get('/profile/me', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');

@@ -1,11 +1,11 @@
-require('dotenv').config();//loading .env file contents
+require('dotenv').config(); // Load environment variables
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const http = require('http');
 const { Server } = require('socket.io');
 
-//importing the routes
+// Import all our route handlers
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const swapRoutes = require('./routes/swap.routes');
@@ -13,19 +13,22 @@ const chatRoutes = require('./routes/chat.routes');
 const contactRoutes = require('./routes/contact.routes');
 const aiRoutes = require('./routes/ai.routes');
 
-//creating the express app
+// Create the Express app and HTTP server
 const app = express();
 const server = http.createServer(app);
 
-// Allowed origins for CORS
+// List of allowed origins for CORS - keeps our app secure
 const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:3000',
+    'https://skillswappie.vercel.app',
     process.env.CLIENT_URL, // Your deployed frontend URL
 ].filter(Boolean); // Remove undefined values
 
-// Setup Socket.io with CORS
+console.log('Allowed CORS origins:', allowedOrigins);
+
+// Set up Socket.io for real-time chat with CORS enabled
 const io = new Server(server, {
     cors: {
         origin: allowedOrigins,
@@ -34,27 +37,30 @@ const io = new Server(server, {
     }
 });
 
-//middleware of the app
+// Middleware setup
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
+        console.log('CORS check - Origin:', origin);
+        // Let requests with no origin through (like mobile apps or Postman)
         if (!origin) return callback(null, true);
         
         if (allowedOrigins.indexOf(origin) !== -1) {
+            console.log('CORS allowed for:', origin);
             callback(null, true);
         } else {
+            console.log('CORS blocked for:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true
 }));
-app.use(express.json({ limit: '10mb' })); //allow our app to accept json format with 10MB limit
+app.use(express.json({ limit: '10mb' })); // Accept JSON up to 10MB (for profile images)
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Make io accessible in routes
+// Make Socket.io available in our routes
 app.set('io', io);
 
-//Use routes imported
+// Hook up all the routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/swap', swapRoutes);
@@ -62,7 +68,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/ai', aiRoutes);
 
-//Testing the server
+// Basic health check endpoint
 app.get('/', (req, res) => {
     res.json({
         message: "Welcome to Skill Swap API!"
@@ -71,16 +77,16 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-//Get the connection string
+// Get MongoDB connection string from environment
 const uri = process.env.MONGODB_URI;
 
-//connect to mongoDB
+// Connect to MongoDB
 mongoose.connect(uri)
     .then(() => {
         console.log('Connected to MongoDB⚡ ');
         console.log('Database:', mongoose.connection.name);
 
-        //start the server after DB is connected
+        // Start the server once database is ready
         server.listen(PORT, () => {
             console.log(`Server is running on port✔ ${PORT}`);
         });
@@ -89,19 +95,19 @@ mongoose.connect(uri)
         console.error('Database connection error:❌ ', err.message)
     })
 
-// Socket.io connection handling
+// Handle Socket.io connections for real-time chat
 const connectedUsers = new Map();
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    // User joins with their ID
+    // When a user joins, store their socket ID
     socket.on('join', (userId) => {
         connectedUsers.set(userId, socket.id);
         console.log(`User ${userId} joined with socket ${socket.id}`);
     });
 
-    // Handle private messages
+    // Send private messages between users
     socket.on('send_message', ({ senderId, receiverId, message }) => {
         const receiverSocketId = connectedUsers.get(receiverId);
         if (receiverSocketId) {
@@ -113,7 +119,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle typing indicator
+    // Show typing indicator to the other person
     socket.on('typing', ({ senderId, receiverId }) => {
         const receiverSocketId = connectedUsers.get(receiverId);
         if (receiverSocketId) {
@@ -128,10 +134,10 @@ io.on('connection', (socket) => {
         }
     });
 
-    // User disconnects
+    // Clean up when user disconnects
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
-        // Remove from connected users
+        // Remove them from the active users map
         for (const [userId, socketId] of connectedUsers.entries()) {
             if (socketId === socket.id) {
                 connectedUsers.delete(userId);

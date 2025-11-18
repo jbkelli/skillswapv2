@@ -1,9 +1,9 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Initialize Gemini AI
+// Setting up Gemini with our API key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// AI function to generate content using Gemini
+// Main AI function - just pass in a prompt and get back generated text
 async function AI(prompt) {
     try {
         const model = genAI.getGenerativeModel({ model: "models/gemini-2.5-flash-lite-preview-09-2025" });
@@ -15,7 +15,7 @@ async function AI(prompt) {
     }
 }
 
-// Cold email prompt template
+// Template for generating cold outreach emails
 const COLD_EMAIL_PROMPT = `
 Generate a professional cold outreach email with the following structure:
 1. Subject line
@@ -25,7 +25,7 @@ Generate a professional cold outreach email with the following structure:
 Now generate the final outreach email
 `;
 
-// Injector function to customize the email
+// This function takes user details and crafts a personalized cold email
 function injector(sender, receiver, bizName, category, pitch) {
     const prompt = `
 You are a professional email writer. Generate a personalized cold outreach email with these details:

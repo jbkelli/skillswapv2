@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 
-// Configure email transporter (using Gmail)
+// Set up email sending with Gmail
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Verify transporter configuration
+// Make sure email is properly configured
 transporter.verify(function(error, success) {
     if (error) {
         console.log('Email configuration error:', error);
@@ -21,17 +21,17 @@ transporter.verify(function(error, success) {
     }
 });
 
-// Send contact form email
+// Handle contact form submissions
 router.post('/send', async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
 
-        // Validation
+        // Make sure we have everything we need
         if (!name || !email || !subject || !message) {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
-        // Check if email is configured
+        // Check if email is set up properly
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
             console.error('Email not configured - EMAIL_USER and EMAIL_PASS missing');
             return res.status(503).json({ 

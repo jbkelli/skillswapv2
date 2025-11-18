@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 
-// Create axios instance with default config
+// Set up axios with our backend URL and default settings
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -9,7 +9,7 @@ const api = axios.create({
   }
 });
 
-// Add token to requests if it exists
+// Automatically attach auth token to all requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');

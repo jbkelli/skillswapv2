@@ -11,7 +11,7 @@ export default function AIChatbot() {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Email form state
+  // State for the email generator tab
   const [emailForm, setEmailForm] = useState({
     sender: '',
     receiver: '',

@@ -3,7 +3,7 @@ const router = express.Router();
 const SwapRequest = require('../models/SwapRequest.model');
 const authMiddleware = require('../middleware/auth.middleware');
 
-// Send a swap request
+// Send someone a swap request
 router.post('/send', authMiddleware, async (req, res) => {
     try {
         const { receiverId, message } = req.body;
@@ -25,7 +25,7 @@ router.post('/send', authMiddleware, async (req, res) => {
             return res.status(401).json({ message: 'Authentication required' });
         }
 
-        // Check if request already exists
+        // Don't allow duplicate pending requests
         console.log('Checking for existing request...');
         const existingRequest = await SwapRequest.findOne({
             sender: req.user.id,
@@ -66,7 +66,7 @@ router.post('/send', authMiddleware, async (req, res) => {
     }
 });
 
-// Get received swap requests
+// Get swap requests you've received from others
 router.get('/received', authMiddleware, async (req, res) => {
     try {
         const requests = await SwapRequest.find({ receiver: req.user.id })
@@ -80,7 +80,7 @@ router.get('/received', authMiddleware, async (req, res) => {
     }
 });
 
-// Get sent swap requests
+// Get swap requests you've sent to others
 router.get('/sent', authMiddleware, async (req, res) => {
     try {
         const requests = await SwapRequest.find({ sender: req.user.id })
@@ -94,8 +94,8 @@ router.get('/sent', authMiddleware, async (req, res) => {
     }
 });
 
-// Update swap request status (accept/reject)
-router.put('/:id', authMiddleware, async (req, res) => {
+// Accept or reject a swap request (receiver only)
+router.put('/update/:id', authMiddleware, async (req, res) => {
     try {
         const { status } = req.body;
 
@@ -106,11 +106,11 @@ router.put('/:id', authMiddleware, async (req, res) => {
         const request = await SwapRequest.findById(req.params.id);
 
         if (!request) {
-            return res.status(404).json({ message: 'Request not found' });
+            return res.status(404).json({ message: 'Swap request not found' });
         }
 
-        // Only receiver can update the request
-        if (request.receiver.toString() !== req.user.id) {
+        // Make sure only the receiver can accept/reject
+        if (swapRequest.receiver.toString() !== req.user.id) {
             return res.status(403).json({ message: 'Unauthorized' });
         }
 
@@ -127,17 +127,17 @@ router.put('/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// Cancel swap request (sender only)
-router.delete('/:id', authMiddleware, async (req, res) => {
+// Cancel a request you sent (sender only)
+router.delete('/cancel/:id', authMiddleware, async (req, res) => {
     try {
         const request = await SwapRequest.findById(req.params.id);
 
         if (!request) {
-            return res.status(404).json({ message: 'Request not found' });
+            return res.status(404).json({ message: 'Swap request not found' });
         }
 
-        // Only sender can cancel the request
-        if (request.sender.toString() !== req.user.id) {
+        // Only the sender can cancel their own request
+        if (swapRequest.sender.toString() !== req.user.id) {
             return res.status(403).json({ message: 'Unauthorized' });
         }
 

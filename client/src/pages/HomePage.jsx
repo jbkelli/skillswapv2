@@ -29,7 +29,7 @@ export default function HomePage() {
       console.log('Fetching data from:', import.meta.env.VITE_API_URL || 'default URL');
       console.log('Environment mode:', import.meta.env.MODE);
       
-      // Fetch all users, sent requests, and received requests in parallel
+      // Grab everything we need at once for better performance
       const [usersResponse, sentRequestsResponse, receivedRequestsResponse] = await Promise.all([
         userService.getAllUsers(),
         swapService.getSentRequests(),
@@ -47,7 +47,7 @@ export default function HomePage() {
       setSentRequests(sentReqs);
       setAllUsers(users);
 
-      // Combine all accepted connections (both sent and received)
+      // Get all accepted connections from both directions
       const acceptedSentIds = sentReqs
         .filter(req => req.status === 'accepted')
         .map(req => req.receiver._id);
@@ -56,12 +56,12 @@ export default function HomePage() {
         .filter(req => req.status === 'accepted')
         .map(req => req.sender._id);
 
-      // Merge both arrays and remove duplicates
+      // Combine and deduplicate the IDs
       const allSwappieIds = [...new Set([...acceptedSentIds, ...acceptedReceivedIds])];
 
       const swappiesList = users.filter(u => allSwappieIds.includes(u._id));
       
-      // For discover: exclude users with accepted requests (both ways)
+      // Discover tab shows everyone except your current connections
       const discoverList = users.filter(u => !allSwappieIds.includes(u._id));
 
       setSwappies(sortUsersByMatch(swappiesList));
@@ -75,12 +75,12 @@ export default function HomePage() {
     }
   };
 
-  // Filter and search users
+  // Search and filter the current user list
   const getFilteredUsers = () => {
     const currentList = activeTab === 'swappies' ? swappies : discoverUsers;
     let result = [...currentList];
 
-    // Apply search filter
+    // Filter by search query if provided
     if (searchQuery) {
       result = result.filter(u => 
         u.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -90,7 +90,7 @@ export default function HomePage() {
       );
     }
 
-    // Apply skill filter
+    // Filter by specific skill if selected
     if (filterSkill) {
       result = result.filter(u => 
         u.skillsHave?.some(s => s.toLowerCase().includes(filterSkill.toLowerCase())) ||
@@ -103,7 +103,7 @@ export default function HomePage() {
 
   const filteredUsers = getFilteredUsers();
 
-  // Simple matching algorithm (will be enhanced with AI later)
+  // Sort users by how well they match what you're looking for
   const sortUsersByMatch = (allUsers) => {
     return allUsers.sort((a, b) => {
       const scoreA = calculateMatchScore(a);
@@ -115,14 +115,14 @@ export default function HomePage() {
   const calculateMatchScore = (otherUser) => {
     let score = 0;
     
-    // Check if what I want matches what they have
+    // Do they have skills I want to learn?
     user.skillsWant?.forEach(skill => {
       if (otherUser.skillsHave?.some(s => s.toLowerCase().includes(skill.toLowerCase()))) {
         score += 10;
       }
     });
 
-    // Check if what they want matches what I have
+    // Do I have skills they want to learn?
     otherUser.skillsWant?.forEach(skill => {
       if (user.skillsHave?.some(s => s.toLowerCase().includes(skill.toLowerCase()))) {
         score += 10;
@@ -138,7 +138,7 @@ export default function HomePage() {
       const response = await swapService.sendRequest(receiverId, 'Hi! Let\'s swap skills!');
       console.log('Swap request response:', response);
       alert('Swap request sent!');
-      // Refresh data to update UI
+      // Reload everything to show the updated state
       fetchData();
     } catch (err) {
       console.error('Error sending swap request:', err);
@@ -152,7 +152,7 @@ export default function HomePage() {
     navigate(`/chat/${userId}`);
   };
 
-  // Check if a user has a pending request
+  // See if we already sent them a request
   const getPendingRequest = (userId) => {
     return sentRequests.find(req => req.receiver._id === userId && req.status === 'pending');
   };
@@ -166,7 +166,7 @@ export default function HomePage() {
     );
   }
 
-  // Get all unique skills from all users for filter dropdown
+  // Build a list of all available skills for the dropdown filter
   const allSkills = [...new Set([
     ...allUsers.flatMap(u => u.skillsHave || []),
     ...allUsers.flatMap(u => u.skillsWant || [])

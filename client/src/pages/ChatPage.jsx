@@ -26,16 +26,16 @@ export default function ChatPage() {
   const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
-    // Join socket with user ID
+    // Connect this user to the chat socket
     socket.emit('join', user.id);
 
-    // Fetch other user info
+    // Load info about who we're chatting with
     fetchOtherUser();
 
-    // Fetch message history
+    // Load the conversation history
     fetchMessages();
 
-    // Listen for incoming messages
+    // Set up listener for new messages
     socket.on('receive_message', (data) => {
       if (data.senderId === userId) {
         setMessages(prev => [...prev, {
@@ -44,14 +44,14 @@ export default function ChatPage() {
           createdAt: data.timestamp
         }]);
         
-        // Show notification for new message
+        // Let the user know they got a message
         if (otherUser) {
           showNotification(`New message from ${otherUser.firstName}`, 'info');
         }
       }
     });
 
-    // Listen for typing indicator
+    // Show when the other person is typing
     socket.on('user_typing', (data) => {
       if (data.senderId === userId) {
         setIsTyping(true);
@@ -90,7 +90,7 @@ export default function ChatPage() {
       setMessages(response.data.messages);
       setLoading(false);
 
-      // Mark messages as read
+      // Mark everything as read since we're viewing the chat
       await api.put(`/chat/read/${userId}`);
     } catch (err) {
       console.error('Failed to fetch messages');
@@ -119,7 +119,7 @@ export default function ChatPage() {
     
     if (!newMessage.trim()) return;
 
-    // Check if message starts with @vally
+    // Is the user asking Vally for help?
     if (newMessage.trim().toLowerCase().startsWith('@vally')) {
       const question = newMessage.replace(/@vally/i, '').trim();
       
@@ -128,7 +128,7 @@ export default function ChatPage() {
         return;
       }
 
-      // Add user message
+      // Show the user's question in the chat
       const userMsg = {
         sender: { _id: user.id, firstName: user.firstName, lastName: user.lastName },
         message: newMessage,
@@ -139,7 +139,7 @@ export default function ChatPage() {
       setVallyTyping(true);
 
       try {
-        // Call Vally AI
+        // Ask Vally for a response
         const response = await fetch(`${API_BASE_URL}/ai/chat`, {
           method: 'POST',
           headers: {
@@ -151,7 +151,7 @@ export default function ChatPage() {
 
         const data = await response.json();
         
-        // Add Vally's response
+        // Display what Vally said
         const vallyMsg = {
           sender: { _id: 'vally', firstName: 'Vally', lastName: 'AI' },
           message: data.response || 'Sorry, I couldn\'t process that. Try again!',
@@ -174,22 +174,22 @@ export default function ChatPage() {
       return;
     }
 
-    // Normal message sending
+    // Regular message (not for Vally)
     try {
-      // Save to database
+      // Save it to the database first
       const response = await api.post('/chat/send', {
         receiverId: userId,
         message: newMessage
       });
 
-      // Send via socket
+      // Send it through Socket.io for real-time delivery
       socket.emit('send_message', {
         senderId: user.id,
         receiverId: userId,
         message: newMessage
       });
 
-      // Add to local messages
+      // Show it in the UI immediately
       setMessages(prev => [...prev, response.data.data]);
       setNewMessage('');
       socket.emit('stop_typing', { senderId: user.id, receiverId: userId });
@@ -244,12 +244,12 @@ export default function ChatPage() {
             const isMyMessage = msg.sender._id === user.id;
             const isVallyMessage = msg.isVally || msg.sender._id === 'vally';
             
-            // Check if we need to show a date separator
+            // Should we show a date label here?
             const currentDate = new Date(msg.createdAt).toDateString();
             const previousDate = idx > 0 ? new Date(messages[idx - 1].createdAt).toDateString() : null;
             const showDateSeparator = currentDate !== previousDate;
             
-            // Format date for separator
+            // Make dates readable (Today, Yesterday, etc.)
             const formatDateSeparator = (date) => {
               const msgDate = new Date(date);
               const today = new Date();

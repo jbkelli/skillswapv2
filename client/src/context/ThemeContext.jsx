@@ -16,7 +16,7 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
-    // Apply theme to body
+    // Update the body class when theme changes
     if (theme === 'light') {
       document.body.classList.add('light-theme');
       document.body.classList.remove('dark-theme');

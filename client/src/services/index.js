@@ -1,6 +1,6 @@
 import api from './api';
 
-// Auth services
+// Authentication services
 export const authService = {
   signup: async (userData) => {
     const response = await api.post('/auth/signup', userData);
@@ -13,7 +13,7 @@ export const authService = {
   }
 };
 
-// User services
+// User profile services
 export const userService = {
   getAllUsers: async () => {
     const response = await api.get('/users/all');
@@ -36,7 +36,7 @@ export const userService = {
   }
 };
 
-// Swap request services
+// Swap request management services
 export const swapService = {
   sendRequest: async (receiverId, message) => {
     const response = await api.post('/swap/send', { receiverId, message });

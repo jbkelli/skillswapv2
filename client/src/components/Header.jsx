@@ -7,7 +7,7 @@ export default function Header() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Debug: Log user data
+  // Checking what user data we have
   console.log('Header - User data:', user);
   console.log('Header - Profile Image:', user?.profileImage);
 

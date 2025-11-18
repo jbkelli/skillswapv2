@@ -1,23 +1,23 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-// Import models
+// Bring in our database models
 const User = require('../models/User.model');
 
-// Get the connection string
+// Grab the MongoDB connection string
 const uri = process.env.MONGODB_URI;
 
 const cleanDatabase = async () => {
     try {
-        // Connect to MongoDB
+        // Connect to the database
         await mongoose.connect(uri);
         console.log('Connected to MongoDB ✅');
 
-        // Delete all users
+        // Wipe out all users
         const userResult = await User.deleteMany({});
         console.log(`Deleted ${userResult.deletedCount} users`);
 
-        // You can also clean other collections if needed
+        // Uncomment these if you want to clean other collections too
         // const SwapRequest = require('../models/SwapRequest.model');
         // const Message = require('../models/Message.model');
         // await SwapRequest.deleteMany({});
@@ -25,7 +25,7 @@ const cleanDatabase = async () => {
 
         console.log('Database cleaned successfully! 🧹');
         
-        // Close connection
+        // Disconnect when done
         await mongoose.connection.close();
         console.log('Connection closed');
         process.exit(0);

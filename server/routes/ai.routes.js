@@ -3,7 +3,7 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth.middleware');
 const { AI, injector } = require('../service/emailGenerator');
 
-// SkillSwap context for Vally
+// Here's everything Vally knows about SkillSwap
 const SKILLSWAP_CONTEXT = `You are Vally, a friendly and helpful AI assistant for SkillSwap.
 
 SkillSwap is a platform where people exchange skills and learn from each other through direct connections.
@@ -41,19 +41,19 @@ PLATFORM FEATURES:
 
 IMPORTANT: Be concise and natural. Answer questions directly without repeatedly introducing yourself. Only mention your name if it's the first message or if specifically asked. Be encouraging, friendly, and helpful.`;
 
-// Generate cold email endpoint
+// Endpoint to generate professional cold emails using AI
 router.post('/generate-email', authMiddleware, async (req, res) => {
     try {
         const { sender, receiver, bizName, category, pitch } = req.body;
 
-        // Validation
+        // Making sure we have all the info we need
         if (!sender || !receiver || !bizName || !category || !pitch) {
             return res.status(400).json({ 
                 message: 'All fields are required: sender, receiver, bizName, category, pitch' 
             });
         }
 
-        // Generate email using AI
+        // Let the AI work its magic
         const generatedEmail = await injector(sender, receiver, bizName, category, pitch);
 
         res.status(200).json({ 
@@ -69,7 +69,7 @@ router.post('/generate-email', authMiddleware, async (req, res) => {
     }
 });
 
-// General AI chat endpoint
+// Main chat endpoint where Vally responds to user questions
 router.post('/chat', authMiddleware, async (req, res) => {
     try {
         const { prompt } = req.body;
@@ -78,14 +78,14 @@ router.post('/chat', authMiddleware, async (req, res) => {
             return res.status(400).json({ message: 'Prompt is required' });
         }
 
-        // Add SkillSwap context to the prompt
+        // Give Vally the SkillSwap knowledge base before answering
         const contextualPrompt = `${SKILLSWAP_CONTEXT}
 
 User Question: ${prompt}
 
 Provide a helpful response as Vally. If the question is about SkillSwap, use the context above. If it's a general question, answer it naturally while maintaining your friendly Vally personality.`;
 
-        // Use the AI function to generate response
+        // Get Vally's response
         const response = await AI(contextualPrompt);
 
         res.status(200).json({ 
