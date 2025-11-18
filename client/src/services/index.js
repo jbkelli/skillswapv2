@@ -54,12 +54,12 @@ export const swapService = {
   },
 
   updateRequestStatus: async (requestId, status) => {
-    const response = await api.put(`/swap/${requestId}`, { status });
+    const response = await api.put(`/swap/update/${requestId}`, { status });
     return response.data;
   },
 
   cancelRequest: async (requestId) => {
-    const response = await api.delete(`/swap/${requestId}`);
+    const response = await api.delete(`/swap/cancel/${requestId}`);
     return response.data;
   }
 };

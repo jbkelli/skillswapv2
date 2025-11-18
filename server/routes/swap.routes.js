@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const SwapRequest = require('../models/SwapRequest.model');
+const User = require('../models/User.model');
 const authMiddleware = require('../middleware/auth.middleware');
+const mongoose = require('mongoose');
 
 // Send someone a swap request
 router.post('/send', authMiddleware, async (req, res) => {
@@ -23,6 +25,26 @@ router.post('/send', authMiddleware, async (req, res) => {
         if (!req.user || !req.user.id) {
             console.log('ERROR: User authentication failed');
             return res.status(401).json({ message: 'Authentication required' });
+        }
+
+        // Validate receiver ID format
+        if (!mongoose.Types.ObjectId.isValid(receiverId)) {
+            console.log('ERROR: Invalid receiver ID format');
+            return res.status(400).json({ message: 'Invalid receiver ID format' });
+        }
+
+        // Check if receiver exists
+        console.log('Checking if receiver exists...');
+        const receiverUser = await User.findById(receiverId);
+        if (!receiverUser) {
+            console.log('ERROR: Receiver user not found');
+            return res.status(404).json({ message: 'Receiver user not found' });
+        }
+
+        // Don't allow users to send requests to themselves
+        if (req.user.id === receiverId) {
+            console.log('ERROR: Cannot send request to yourself');
+            return res.status(400).json({ message: 'Cannot send swap request to yourself' });
         }
 
         // Don't allow duplicate pending requests
@@ -59,9 +81,11 @@ router.post('/send', authMiddleware, async (req, res) => {
         console.error('Error message:', err.message);
         console.error('Error name:', err.name);
         console.error('Error stack:', err.stack);
+        console.error('Full error:', err);
         res.status(500).json({ 
             message: 'Server error sending swap request',
-            error: err.message
+            error: err.message,
+            details: process.env.NODE_ENV === 'development' ? err.stack : undefined
         });
     }
 });
