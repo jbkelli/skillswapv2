@@ -134,12 +134,17 @@ export default function HomePage() {
 
   const handleSendRequest = async (receiverId) => {
     try {
-      await swapService.sendRequest(receiverId, 'Hi! Let\'s swap skills!');
+      console.log('Sending swap request to:', receiverId);
+      const response = await swapService.sendRequest(receiverId, 'Hi! Let\'s swap skills!');
+      console.log('Swap request response:', response);
       alert('Swap request sent!');
       // Refresh data to update UI
       fetchData();
     } catch (err) {
-      alert('Failed to send request');
+      console.error('Error sending swap request:', err);
+      console.error('Error response:', err.response?.data);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to send request';
+      alert('Failed to send request: ' + errorMessage);
     }
   };
 
