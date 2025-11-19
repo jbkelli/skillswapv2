@@ -126,7 +126,7 @@ export default function AIChatbot() {
     <>
       {/* Floating Button */}
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed bottom-24 right-6 z-50">
           <button
             onClick={() => setIsOpen(true)}
             className="bg-linear-to-br from-purple-600 to-pink-600 text-white px-6 py-4 rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center gap-2"
@@ -141,7 +141,7 @@ export default function AIChatbot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl z-50 flex flex-col">
+        <div className="fixed bottom-24 right-6 w-96 h-[600px] bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl z-50 flex flex-col">
           {/* Header */}
           <div className="bg-linear-to-r from-purple-600 to-pink-600 p-4 rounded-t-2xl flex justify-between items-center shrink-0">
             <div className="flex items-center gap-3">
