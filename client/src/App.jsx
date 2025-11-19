@@ -1,6 +1,6 @@
 // client/src/App.jsx
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import AuthPage from './pages/AuthPage';
 import HomePage from './pages/HomePage';
@@ -31,8 +31,7 @@ function App() {
 
   return (
     <div className="font-sans">
-      <BrowserRouter>
-        <Routes>
+      <Routes>
           {/* Public Routes */}
           <Route 
             path="/" 
@@ -95,7 +94,6 @@ function App() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
-      </BrowserRouter>
     </div>
   );
 }

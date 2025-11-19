@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import { userService, swapService } from '../services';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
@@ -9,6 +10,7 @@ import AIChatbot from '../components/AIChatbot';
 
 export default function HomePage() {
   const { user } = useAuth();
+  const { showNotification } = useNotification();
   const [allUsers, setAllUsers] = useState([]);
   const [swappies, setSwappies] = useState([]);
   const [discoverUsers, setDiscoverUsers] = useState([]);
@@ -137,14 +139,14 @@ export default function HomePage() {
       console.log('Sending swap request to:', receiverId);
       const response = await swapService.sendRequest(receiverId, 'Hi! Let\'s swap skills!');
       console.log('Swap request response:', response);
-      alert('Swap request sent!');
+      showNotification('Swap request sent successfully!', 'success');
       // Reload everything to show the updated state
       fetchData();
     } catch (err) {
       console.error('Error sending swap request:', err);
       console.error('Error response:', err.response?.data);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to send request';
-      alert('Failed to send request: ' + errorMessage);
+      showNotification('Failed to send request: ' + errorMessage, 'error');
     }
   };
 

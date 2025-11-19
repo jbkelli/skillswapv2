@@ -116,6 +116,7 @@ mongoose.connect(uri)
 
 // Handle Socket.io connections for real-time chat
 const connectedUsers = new Map();
+const User = require('./models/User.model');
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
@@ -127,11 +128,23 @@ io.on('connection', (socket) => {
     });
 
     // Send private messages between users
-    socket.on('send_message', ({ senderId, receiverId, message }) => {
+    socket.on('send_message', async ({ senderId, receiverId, message }) => {
         const receiverSocketId = connectedUsers.get(receiverId);
         if (receiverSocketId) {
+            // Fetch sender info for notification
+            let senderName = 'Someone';
+            try {
+                const sender = await User.findById(senderId).select('firstName lastName');
+                if (sender) {
+                    senderName = `${sender.firstName} ${sender.lastName}`;
+                }
+            } catch (err) {
+                console.error('Error fetching sender info:', err);
+            }
+
             io.to(receiverSocketId).emit('receive_message', {
                 senderId,
+                senderName,
                 message,
                 timestamp: new Date()
             });
