@@ -16,7 +16,19 @@ export default function ChatPage() {
   const { user } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState([]);
+  
+  // Load messages from localStorage to persist Vally conversations
+  const [messages, setMessages] = useState(() => {
+    const savedMessages = localStorage.getItem(`chatMessages_${userId}`);
+    if (savedMessages) {
+      try {
+        return JSON.parse(savedMessages);
+      } catch (e) {
+        console.error('Failed to parse saved messages:', e);
+      }
+    }
+    return [];
+  });
   const [newMessage, setNewMessage] = useState('');
   const [otherUser, setOtherUser] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -24,11 +36,18 @@ export default function ChatPage() {
   const [vallyTyping, setVallyTyping] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
+    // Request notification permissions
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
     // Connect this user to the chat socket
     socket.emit('join', user.id);
 
@@ -72,9 +91,47 @@ export default function ChatPage() {
     };
   }, [userId, user.id, otherUser]);
 
+  // Save messages to localStorage whenever they change
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (messages.length > 0) {
+      localStorage.setItem(`chatMessages_${userId}`, JSON.stringify(messages));
+    }
+  }, [messages, userId]);
+
+  useEffect(() => {
+    if (!isUserScrolling) {
+      scrollToBottom();
+    }
+  }, [messages, isUserScrolling]);
+
+  // Detect if user is scrolling up
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    let scrollTimeout;
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+      
+      // If user scrolls up, disable auto-scroll
+      if (!isAtBottom) {
+        setIsUserScrolling(true);
+      } else {
+        // Use timeout to avoid rapid state changes
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          setIsUserScrolling(false);
+        }, 100);
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimeout);
+    };
+  }, []);
 
   const fetchOtherUser = async () => {
     try {
@@ -88,7 +145,26 @@ export default function ChatPage() {
   const fetchMessages = async () => {
     try {
       const response = await api.get(`/chat/${userId}`);
-      setMessages(response.data.messages);
+      const dbMessages = response.data.messages;
+      
+      // Get existing messages from localStorage (includes Vally messages)
+      const existingMessages = messages.length > 0 ? messages : [];
+      const vallyMessages = existingMessages.filter(msg => msg.isVally || msg.sender._id === 'vally');
+      
+      // Create a Set of DB message IDs to avoid duplicates
+      const dbMessageIds = new Set(dbMessages.map(msg => msg._id));
+      
+      // Keep Vally messages and any local messages not in DB yet
+      const localOnlyMessages = existingMessages.filter(msg => 
+        (msg.isVally || msg.sender._id === 'vally') || !msg._id || !dbMessageIds.has(msg._id)
+      );
+      
+      // Merge: DB messages + local-only messages (like Vally)
+      const mergedMessages = [...dbMessages, ...localOnlyMessages].sort((a, b) => 
+        new Date(a.createdAt) - new Date(b.createdAt)
+      );
+      
+      setMessages(mergedMessages);
       setLoading(false);
 
       // Mark everything as read since we're viewing the chat
@@ -224,9 +300,11 @@ export default function ChatPage() {
           sender: { _id: 'vally', firstName: 'Vally', lastName: 'AI' },
           message: data.response || 'Sorry, I couldn\'t process that. Try again!',
           createdAt: new Date().toISOString(),
-          isVally: true
+          isVally: true,
+          messageType: 'text'
         };
         setMessages(prev => [...prev, vallyMsg]);
+        setIsUserScrolling(false); // Allow auto-scroll to new message
       } catch (err) {
         console.error('Vally error:', err);
         const errorMsg = {
@@ -314,7 +392,7 @@ export default function ChatPage() {
         </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 max-w-4xl w-full mx-auto">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-6 py-4 max-w-4xl w-full mx-auto">
         <div className="space-y-4">
           {messages.map((msg, idx) => {
             const isMyMessage = msg.sender._id === user.id;
@@ -383,24 +461,43 @@ export default function ChatPage() {
                       
                       {/* File Message */}
                       {msg.messageType === 'file' && msg.fileUrl && (
-                        <a 
-                          href={`${SERVER_URL}${msg.fileUrl}`}
-                          download={msg.fileName}
-                          className="flex items-center gap-2 mb-2 p-2 bg-black/20 rounded hover:bg-black/30 transition-colors"
-                        >
-                          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clipRule="evenodd" />
-                          </svg>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{msg.fileName}</p>
-                            {msg.fileSize && (
-                              <p className="text-xs opacity-70">{(msg.fileSize / 1024).toFixed(1)} KB</p>
-                            )}
+                        <div className="mb-2 p-3 bg-white/10 rounded-lg border border-white/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center shrink-0">
+                              <svg className="w-6 h-6 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{msg.fileName}</p>
+                              {msg.fileSize && (
+                                <p className="text-xs opacity-70">{(msg.fileSize / 1024).toFixed(1)} KB</p>
+                              )}
+                            </div>
                           </div>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                          </svg>
-                        </a>
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              onClick={() => window.open(`${SERVER_URL}${msg.fileUrl}`, '_blank')}
+                              className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              View
+                            </button>
+                            <a
+                              href={`${SERVER_URL}${msg.fileUrl}`}
+                              download={msg.fileName}
+                              className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                              Download
+                            </a>
+                          </div>
+                        </div>
                       )}
                       
                       {/* Text Message */}

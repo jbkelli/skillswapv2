@@ -10,6 +10,7 @@ import UserProfilePage from './pages/UserProfilePage';
 import RequestsPage from './pages/RequestsPage';
 import ChatPage from './pages/ChatPage';
 import ContactPage from './pages/ContactPage';
+import NotificationPermission from './components/NotificationPermission';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -31,6 +32,7 @@ function App() {
 
   return (
     <div className="font-sans">
+      {isAuthenticated && <NotificationPermission />}
       <Routes>
           {/* Public Routes */}
           <Route 

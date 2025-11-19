@@ -24,6 +24,11 @@ export const ChatNotificationProvider = ({ children }) => {
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
+    // Request notification permissions on load
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
     // Create socket connection
     const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
@@ -38,13 +43,35 @@ export const ChatNotificationProvider = ({ children }) => {
       const isCurrentChat = location.pathname === `/chat/${data.senderId}`;
       
       if (!isCurrentChat) {
-        // Show notification with sound
+        // Show in-app notification with sound
         setNotification({
           senderId: data.senderId,
           senderName: data.senderName || 'Someone',
           text: data.message,
           timestamp: data.timestamp
         });
+
+        // Show browser notification if permission granted
+        if ('Notification' in window && Notification.permission === 'granted') {
+          const browserNotification = new Notification('New message from ' + (data.senderName || 'Someone'), {
+            body: data.message || 'Sent you a message',
+            icon: '/logo.png', // You can replace with your app icon
+            badge: '/logo.png',
+            tag: `chat-${data.senderId}`, // Prevents duplicate notifications
+            requireInteraction: false,
+            silent: false // Play system sound
+          });
+
+          // Navigate to chat when notification is clicked
+          browserNotification.onclick = () => {
+            window.focus();
+            window.location.href = `/chat/${data.senderId}`;
+            browserNotification.close();
+          };
+
+          // Auto close after 5 seconds
+          setTimeout(() => browserNotification.close(), 5000);
+        }
       }
     });
 
