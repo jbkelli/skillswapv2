@@ -4,9 +4,22 @@ import { API_BASE_URL } from '../config/api';
 export default function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('chat'); // 'chat' or 'email'
-  const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Hi! I\'m Vally, your AI learning companion for SkillSwap! 🚀 I can help you understand how SkillSwap works, answer questions about the platform, or generate professional cold outreach emails. What would you like to know?' }
-  ]);
+  
+  // Load messages from localStorage on mount
+  const [messages, setMessages] = useState(() => {
+    const savedMessages = localStorage.getItem('vallyMessages');
+    if (savedMessages) {
+      try {
+        return JSON.parse(savedMessages);
+      } catch (e) {
+        console.error('Failed to parse saved messages:', e);
+      }
+    }
+    return [
+      { role: 'assistant', content: 'Hi! I\'m Vally, your AI learning companion for SkillSwap! 🚀 I can help you understand how SkillSwap works, answer questions about the platform, or generate professional cold outreach emails. What would you like to know?' }
+    ];
+  });
+  
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
@@ -24,6 +37,11 @@ export default function AIChatbot() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('vallyMessages', JSON.stringify(messages));
+  }, [messages]);
 
   useEffect(() => {
     scrollToBottom();
