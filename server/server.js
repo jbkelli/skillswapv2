@@ -82,9 +82,28 @@ const uri = process.env.MONGODB_URI;
 
 // Connect to MongoDB
 mongoose.connect(uri)
-    .then(() => {
+    .then(async () => {
         console.log('Connected to MongoDB⚡ ');
         console.log('Database:', mongoose.connection.name);
+
+        // Fix old indexes on startup (one-time fix for production)
+        try {
+            const db = mongoose.connection.db;
+            const collection = db.collection('swaprequests');
+            
+            // Try to drop the old index if it exists
+            try {
+                await collection.dropIndex('fromUser_1_toUser_1');
+                console.log('✅ Dropped old fromUser_1_toUser_1 index');
+            } catch (err) {
+                // Index doesn't exist, that's fine
+                if (err.code !== 27 && !err.message.includes('index not found')) {
+                    console.log('Note: Old index already removed or never existed');
+                }
+            }
+        } catch (err) {
+            console.log('Index cleanup check completed');
+        }
 
         // Start the server once database is ready
         server.listen(PORT, () => {
