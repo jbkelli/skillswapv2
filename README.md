@@ -5,7 +5,6 @@ A modern MERN stack application that connects people worldwide for intelligent s
 ## 🌐 Live Demo
 
 - **Frontend**: [https://skillswappie.vercel.app](https://skillswappie.vercel.app)
-- **Backend API**: [https://skillswapv2.onrender.com](https://skillswapv2.onrender.com)
 
 ## 🌟 Key Features
 
