@@ -66,11 +66,11 @@ export default function ChatNotification({ message, onClose }) {
       }`}
     >
       <div 
-        className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg shadow-2xl p-4 max-w-sm cursor-pointer hover:shadow-3xl transform hover:scale-105 transition-all"
+        className="bg-linear-to-r from-blue-600 to-purple-600 text-white rounded-lg shadow-2xl p-4 max-w-sm cursor-pointer hover:shadow-3xl transform hover:scale-105 transition-all"
         onClick={handleClick}
       >
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold">
               {message.senderName?.[0] || '💬'}
             </div>
