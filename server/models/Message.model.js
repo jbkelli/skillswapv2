@@ -15,7 +15,24 @@ const messageSchema = new Schema(
         },
         message: {
             type: String,
-            required: true
+            required: false
+        },
+        messageType: {
+            type: String,
+            enum: ['text', 'image', 'file'],
+            default: 'text'
+        },
+        fileUrl: {
+            type: String,
+            required: false
+        },
+        fileName: {
+            type: String,
+            required: false
+        },
+        fileSize: {
+            type: Number,
+            required: false
         },
         read: {
             type: Boolean,

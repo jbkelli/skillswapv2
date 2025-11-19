@@ -13,9 +13,11 @@ export default function UserProfilePage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [hasActiveSwap, setHasActiveSwap] = useState(false);
 
   useEffect(() => {
     fetchUser();
+    checkSwapStatus();
   }, [id]);
 
   const fetchUser = async () => {
@@ -26,6 +28,29 @@ export default function UserProfilePage() {
     } catch (err) {
       setError('Failed to load user profile');
       setLoading(false);
+    }
+  };
+
+  const checkSwapStatus = async () => {
+    try {
+      // Check both received and sent requests for accepted swaps
+      const [receivedResponse, sentResponse] = await Promise.all([
+        swapService.getReceivedRequests(),
+        swapService.getSentRequests()
+      ]);
+      
+      const receivedSwaps = receivedResponse.requests || [];
+      const sentSwaps = sentResponse.requests || [];
+      
+      // Check if there's an accepted swap with this user
+      const hasSwap = [...receivedSwaps, ...sentSwaps].some(swap => 
+        swap.status === 'accepted' && 
+        (swap.sender?._id === id || swap.receiver?._id === id)
+      );
+      
+      setHasActiveSwap(hasSwap);
+    } catch (err) {
+      console.error('Failed to check swap status:', err);
     }
   };
 
@@ -68,9 +93,17 @@ export default function UserProfilePage() {
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
           {/* Profile Header */}
           <div className="flex items-start gap-6 mb-8">
-            <div className="w-32 h-32 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-5xl font-bold">
-              {user.firstName?.[0]}{user.lastName?.[0]}
-            </div>
+            {user.profilePicture ? (
+              <img 
+                src={user.profilePicture} 
+                alt={`${user.firstName} ${user.lastName}`}
+                className="w-32 h-32 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-32 h-32 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-5xl font-bold">
+                {user.firstName?.[0]}{user.lastName?.[0]}
+              </div>
+            )}
             <div className="flex-1">
               <h2 className="text-4xl font-bold mb-2">{user.firstName} {user.lastName}</h2>
               <p className="text-gray-400 text-lg mb-2">@{user.username}</p>
@@ -79,13 +112,22 @@ export default function UserProfilePage() {
                 <p className="text-gray-400 mb-2">📍 {user.location}</p>
               )}
               
-              {user._id !== currentUser.id && (
+              {user._id !== currentUser.id && !hasActiveSwap && (
                 <button
                   onClick={handleSendRequest}
                   className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-500 transition-colors font-semibold"
                 >
                   Send Swap Request
                 </button>
+              )}
+              
+              {hasActiveSwap && (
+                <div className="flex items-center gap-2 text-green-400">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span className="font-semibold">Already Swapped</span>
+                </div>
               )}
             </div>
           </div>

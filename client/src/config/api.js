@@ -2,11 +2,13 @@
 const API_CONFIG = {
   development: {
     baseURL: 'http://localhost:5000/api',
-    socketURL: 'http://localhost:5000'
+    socketURL: 'http://localhost:5000',
+    serverURL: 'http://localhost:5000'
   },
   production: {
     baseURL: import.meta.env.VITE_API_URL || 'https://skillswapv2.onrender.com/api',
-    socketURL: import.meta.env.VITE_SOCKET_URL || 'https://skillswapv2.onrender.com'
+    socketURL: import.meta.env.VITE_SOCKET_URL || 'https://skillswapv2.onrender.com',
+    serverURL: import.meta.env.VITE_SERVER_URL || 'https://skillswapv2.onrender.com'
   }
 };
 
@@ -15,5 +17,6 @@ const config = API_CONFIG[ENV];
 
 export const API_BASE_URL = config.baseURL;
 export const SOCKET_URL = config.socketURL;
+export const SERVER_URL = config.serverURL;
 
 export default config;

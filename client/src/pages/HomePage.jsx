@@ -63,8 +63,21 @@ export default function HomePage() {
 
       const swappiesList = users.filter(u => allSwappieIds.includes(u._id));
       
-      // Discover tab shows everyone except your current connections
-      const discoverList = users.filter(u => !allSwappieIds.includes(u._id));
+      // Get IDs of users with pending requests (both sent and received)
+      const pendingSentIds = sentReqs
+        .filter(req => req.status === 'pending')
+        .map(req => req.receiver._id);
+      
+      const pendingReceivedIds = receivedReqs
+        .filter(req => req.status === 'pending')
+        .map(req => req.sender._id);
+      
+      const allPendingIds = [...new Set([...pendingSentIds, ...pendingReceivedIds])];
+      
+      // Discover tab shows everyone except accepted connections AND pending requests
+      const discoverList = users.filter(u => 
+        !allSwappieIds.includes(u._id) && !allPendingIds.includes(u._id)
+      );
 
       setSwappies(sortUsersByMatch(swappiesList));
       setDiscoverUsers(sortUsersByMatch(discoverList));
@@ -271,9 +284,17 @@ export default function HomePage() {
                   className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-6 hover:border-blue-500 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20"
                 >
                   <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg sm:text-2xl font-bold shrink-0">
-                      {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
-                    </div>
+                    {otherUser.profilePicture ? (
+                      <img 
+                        src={otherUser.profilePicture} 
+                        alt={`${otherUser.firstName} ${otherUser.lastName}`}
+                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg sm:text-2xl font-bold shrink-0">
+                        {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <h3 className="text-base sm:text-xl font-bold truncate">{otherUser.firstName} {otherUser.lastName}</h3>
                       <p className="text-gray-400 text-xs sm:text-sm truncate">@{otherUser.username}</p>

@@ -7,7 +7,7 @@ import api from '../services/api';
 import Header from '../components/Header';
 import NeuralBackground from '../components/NeuralBackground';
 import Footer from '../components/Footer';
-import { SOCKET_URL, API_BASE_URL } from '../config/api';
+import { SOCKET_URL, API_BASE_URL, SERVER_URL } from '../config/api';
 
 const socket = io(SOCKET_URL);
 
@@ -22,8 +22,11 @@ export default function ChatPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [loading, setLoading] = useState(true);
   const [vallyTyping, setVallyTyping] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     // Connect this user to the chat socket
@@ -112,8 +115,75 @@ export default function ChatPage() {
     }, 1000);
   };
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      
+      // Create preview for images
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFilePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setFilePreview(null);
+      }
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSendFile = async () => {
+    if (!selectedFile) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('receiverId', userId);
+      formData.append('message', newMessage || '');
+
+      const response = await api.post('/chat/send-file', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      // Send via socket
+      socket.emit('send_message', {
+        senderId: user.id,
+        receiverId: userId,
+        message: response.data.data.message || 'Sent a file',
+        fileUrl: response.data.data.fileUrl,
+        fileName: response.data.data.fileName,
+        messageType: response.data.data.messageType
+      });
+
+      setMessages(prev => [...prev, response.data.data]);
+      setNewMessage('');
+      handleRemoveFile();
+      socket.emit('stop_typing', { senderId: user.id, receiverId: userId });
+    } catch (err) {
+      console.error('Failed to send file:', err);
+      showNotification('Failed to send file', 'error');
+    }
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
+    
+    // If there's a file selected, send it instead
+    if (selectedFile) {
+      await handleSendFile();
+      return;
+    }
     
     if (!newMessage.trim()) return;
 
@@ -223,9 +293,17 @@ export default function ChatPage() {
             </button>
             {otherUser && (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold">
-                  {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
-                </div>
+                {otherUser.profilePicture ? (
+                  <img 
+                    src={otherUser.profilePicture} 
+                    alt={`${otherUser.firstName} ${otherUser.lastName}`}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold">
+                    {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
+                  </div>
+                )}
                 <div>
                   <h2 className="font-bold">{otherUser.firstName} {otherUser.lastName}</h2>
                   <p className="text-sm text-gray-400">@{otherUser.username}</p>
@@ -291,7 +369,42 @@ export default function ChatPage() {
                           : 'bg-gray-800 text-gray-100 rounded-bl-none'
                       }`}
                     >
-                      <p className="wrap-break-word">{msg.message}</p>
+                      {/* Image Message */}
+                      {msg.messageType === 'image' && msg.fileUrl && (
+                        <div className="mb-2">
+                          <img 
+                            src={`${SERVER_URL}${msg.fileUrl}`}
+                            alt={msg.fileName || 'Image'}
+                            className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => window.open(`${SERVER_URL}${msg.fileUrl}`, '_blank')}
+                          />
+                        </div>
+                      )}
+                      
+                      {/* File Message */}
+                      {msg.messageType === 'file' && msg.fileUrl && (
+                        <a 
+                          href={`${SERVER_URL}${msg.fileUrl}`}
+                          download={msg.fileName}
+                          className="flex items-center gap-2 mb-2 p-2 bg-black/20 rounded hover:bg-black/30 transition-colors"
+                        >
+                          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clipRule="evenodd" />
+                          </svg>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{msg.fileName}</p>
+                            {msg.fileSize && (
+                              <p className="text-xs opacity-70">{(msg.fileSize / 1024).toFixed(1)} KB</p>
+                            )}
+                          </div>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                        </a>
+                      )}
+                      
+                      {/* Text Message */}
+                      {msg.message && <p className="wrap-break-word">{msg.message}</p>}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
                       {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -323,7 +436,56 @@ export default function ChatPage() {
       <div className="border-t border-gray-800 p-4 shrink-0 bg-gray-900">
         <div className="max-w-4xl mx-auto">
           <p className="text-xs text-gray-400 mb-2">💡 Tip: Type <span className="text-purple-400 font-semibold">@vally</span> to ask Vally AI a question!</p>
+          
+          {/* File Preview */}
+          {selectedFile && (
+            <div className="mb-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {filePreview ? (
+                    <img src={filePreview} alt="Preview" className="w-12 h-12 object-cover rounded" />
+                  ) : (
+                    <div className="w-12 h-12 bg-gray-700 rounded flex items-center justify-center">
+                      <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-white">{selectedFile.name}</p>
+                    <p className="text-xs text-gray-400">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleRemoveFile}
+                  className="text-red-400 hover:text-red-300 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+          
           <form onSubmit={handleSendMessage} className="flex gap-3">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              accept="image/*,.pdf,.doc,.docx,.txt,.zip"
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="bg-gray-800 text-gray-300 p-3 rounded-lg hover:bg-gray-700 transition-colors"
+              title="Attach file"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+              </svg>
+            </button>
             <input
               type="text"
               value={newMessage}
@@ -331,15 +493,15 @@ export default function ChatPage() {
                 setNewMessage(e.target.value);
                 handleTyping();
               }}
-              placeholder="Type a message or @vally to ask AI..."
+              placeholder={selectedFile ? "Add a caption (optional)..." : "Type a message or @vally to ask AI..."}
               className="flex-1 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <button
               type="submit"
-              disabled={!newMessage.trim()}
+              disabled={!newMessage.trim() && !selectedFile}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-500 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Send
+              {selectedFile ? 'Send File' : 'Send'}
             </button>
           </form>
         </div>

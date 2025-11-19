@@ -3,12 +3,29 @@ import React, { useState } from 'react';
 export default function SkillInput({ label, skills, setSkills, placeholder, icon = "⚡" }) {
   const [inputValue, setInputValue] = useState('');
 
+  const capitalizeFirstLetter = (str) => {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && inputValue.trim()) {
       e.preventDefault();
-      if (!skills.includes(inputValue.trim())) {
-        setSkills([...skills, inputValue.trim()]);
-      }
+      
+      // Split by comma, trim whitespace, filter empty strings
+      const newSkills = inputValue
+        .split(',')
+        .map(skill => skill.trim())
+        .filter(skill => skill.length > 0)
+        .map(skill => {
+          // Capitalize first letter of each word in the skill
+          return skill
+            .split(' ')
+            .map(word => capitalizeFirstLetter(word))
+            .join(' ');
+        })
+        .filter(skill => !skills.includes(skill)); // Avoid duplicates
+      
+      setSkills([...skills, ...newSkills]);
       setInputValue('');
     }
   };
@@ -52,7 +69,7 @@ export default function SkillInput({ label, skills, setSkills, placeholder, icon
           ))}
         </div>
       )}
-      <p className="text-xs text-gray-500 mt-1">Press Enter to add {label.toLowerCase()}</p>
+      <p className="text-xs text-gray-500 mt-1">Separate skills with commas, then press Enter</p>
     </div>
   );
 }

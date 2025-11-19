@@ -57,6 +57,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' })); // Accept JSON up to 10MB (for profile images)
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+// Serve uploaded files
+app.use('/uploads', express.static('uploads'));
+
 // Make Socket.io available in our routes
 app.set('io', io);
 

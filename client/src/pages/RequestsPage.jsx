@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { swapService } from '../services';
+import { useNotification } from '../context/NotificationContext';
 import Header from '../components/Header';
 import NeuralBackground from '../components/NeuralBackground';
 import Footer from '../components/Footer';
 
 export default function RequestsPage() {
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
   const [receivedRequests, setReceivedRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [activeTab, setActiveTab] = useState('received');
@@ -36,30 +38,33 @@ export default function RequestsPage() {
   const handleAccept = async (requestId) => {
     try {
       await swapService.updateRequestStatus(requestId, 'accepted');
-      alert('Request accepted! You can now chat with this user.');
+      showNotification('Request accepted! You can now chat with this user.', 'success');
       fetchRequests();
     } catch (err) {
-      alert('Failed to accept request');
+      console.error('Failed to accept request:', err);
+      showNotification(err.response?.data?.message || 'Failed to accept request', 'error');
     }
   };
 
   const handleReject = async (requestId) => {
     try {
       await swapService.updateRequestStatus(requestId, 'rejected');
-      alert('Request rejected');
+      showNotification('Request rejected', 'info');
       fetchRequests();
     } catch (err) {
-      alert('Failed to reject request');
+      console.error('Failed to reject request:', err);
+      showNotification(err.response?.data?.message || 'Failed to reject request', 'error');
     }
   };
 
   const handleCancel = async (requestId) => {
     try {
       await swapService.cancelRequest(requestId);
-      alert('Request cancelled successfully');
+      showNotification('Request cancelled successfully', 'success');
       fetchRequests();
     } catch (err) {
-      alert('Failed to cancel request');
+      console.error('Failed to cancel request:', err);
+      showNotification(err.response?.data?.message || 'Failed to cancel request', 'error');
     }
   };
 
@@ -127,9 +132,17 @@ export default function RequestsPage() {
                   className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-blue-500 transition-all"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold">
-                      {request.sender.firstName?.[0]}{request.sender.lastName?.[0]}
-                    </div>
+                    {request.sender.profilePicture ? (
+                      <img 
+                        src={request.sender.profilePicture} 
+                        alt={`${request.sender.firstName} ${request.sender.lastName}`}
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold">
+                        {request.sender.firstName?.[0]}{request.sender.lastName?.[0]}
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -245,9 +258,17 @@ export default function RequestsPage() {
                   className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-blue-500 transition-all"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold">
-                      {request.receiver.firstName?.[0]}{request.receiver.lastName?.[0]}
-                    </div>
+                    {request.receiver.profilePicture ? (
+                      <img 
+                        src={request.receiver.profilePicture} 
+                        alt={`${request.receiver.firstName} ${request.receiver.lastName}`}
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold">
+                        {request.receiver.firstName?.[0]}{request.receiver.lastName?.[0]}
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
                         <div>

@@ -134,7 +134,7 @@ router.put('/update/:id', authMiddleware, async (req, res) => {
         }
 
         // Make sure only the receiver can accept/reject
-        if (swapRequest.receiver.toString() !== req.user.id) {
+        if (request.receiver.toString() !== req.user.id) {
             return res.status(403).json({ message: 'Unauthorized' });
         }
 
@@ -161,7 +161,7 @@ router.delete('/cancel/:id', authMiddleware, async (req, res) => {
         }
 
         // Only the sender can cancel their own request
-        if (swapRequest.sender.toString() !== req.user.id) {
+        if (request.sender.toString() !== req.user.id) {
             return res.status(403).json({ message: 'Unauthorized' });
         }
 
