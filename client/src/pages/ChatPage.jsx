@@ -36,20 +36,18 @@ export default function ChatPage() {
     fetchMessages();
 
     // Set up listener for new messages
-    socket.on('receive_message', (data) => {
+    const handleReceiveMessage = (data) => {
+      // Only add the message if it's from the person we're chatting with
       if (data.senderId === userId) {
         setMessages(prev => [...prev, {
-          sender: { _id: userId },
+          sender: { _id: userId, firstName: otherUser?.firstName, lastName: otherUser?.lastName },
           message: data.message,
           createdAt: data.timestamp
         }]);
-        
-        // Let the user know they got a message
-        if (otherUser) {
-          showNotification(`New message from ${otherUser.firstName}`, 'info');
-        }
       }
-    });
+    };
+
+    socket.on('receive_message', handleReceiveMessage);
 
     // Show when the other person is typing
     socket.on('user_typing', (data) => {
@@ -65,11 +63,11 @@ export default function ChatPage() {
     });
 
     return () => {
-      socket.off('receive_message');
+      socket.off('receive_message', handleReceiveMessage);
       socket.off('user_typing');
       socket.off('user_stop_typing');
     };
-  }, [userId, user.id]);
+  }, [userId, user.id, otherUser]);
 
   useEffect(() => {
     scrollToBottom();
