@@ -5,7 +5,6 @@ const mongoose = require('mongoose');
 const http = require('http');
 const { Server } = require('socket.io');
 const helmet = require('helmet');
-const xss = require('xss-clean');
 const { apiLimiter } = require('./middleware/rateLimiter.middleware');
 
 // Import all our route handlers
@@ -60,9 +59,6 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
-
-// XSS protection
-app.use(xss());
 
 // CORS configuration
 app.use(cors({

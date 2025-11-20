@@ -100,9 +100,7 @@ const userSchema = new Schema(
     }
 );
 
-// Add indexes for faster queries
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
+// Add indexes for faster queries (email and username already indexed by unique: true)
 userSchema.index({ skillsHave: 1 });
 userSchema.index({ skillsWant: 1 });
 userSchema.index({ isOnline: 1 });
