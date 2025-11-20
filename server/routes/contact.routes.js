@@ -12,15 +12,16 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Make sure email is properly configured
-transporter.verify(function(error, success) {
-    if (error) {
-        console.log('Email configuration error:', error);
-        console.log('Please configure EMAIL_USER and EMAIL_PASS in your .env file');
-    } else {
-        console.log('Email server is ready to send messages');
-    }
-});
+// Optional email verification - only in development
+if (process.env.NODE_ENV !== 'production') {
+    transporter.verify(function(error, success) {
+        if (error) {
+            console.log('Note: Email service not configured (optional feature)');
+        } else {
+            console.log('✓ Email server is ready');
+        }
+    });
+}
 
 // Handle contact form submissions
 router.post('/send', contactValidation, async (req, res) => {
