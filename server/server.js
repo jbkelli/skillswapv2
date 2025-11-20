@@ -84,6 +84,9 @@ app.use('/api/', apiLimiter);
 app.use(express.json({ limit: '10mb' })); // Accept JSON up to 10MB (for profile images)
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+// Trust proxy - required for Render deployment (behind reverse proxy)
+app.set('trust proxy', 1);
+
 // Serve uploaded files with proper CORS headers
 const path = require('path');
 app.use('/uploads', (req, res, next) => {
