@@ -28,16 +28,12 @@ router.post('/send', contactValidation, async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
 
-        // Make sure we have everything we need
-        if (!name || !email || !subject || !message) {
-            return res.status(400).json({ message: 'All fields are required' });
-        }
-
         // Check if email is set up properly
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.error('Email not configured - EMAIL_USER and EMAIL_PASS missing');
-            return res.status(503).json({ 
-                message: 'Email service is currently unavailable. Please try again later or contact us directly at tech.marval.innovations@gmail.com' 
+            // Email not configured - provide alternative contact method
+            return res.status(200).json({ 
+                message: 'Thank you for your message! Please contact us directly at tech.marval.innovations@gmail.com or 444mwangialvinm@gmail.com',
+                fallback: true
             });
         }
 
