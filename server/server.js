@@ -116,6 +116,33 @@ mongoose.connect(uri)
             console.log('Index cleanup check completed');
         }
 
+        // Initialize groups if they don't exist
+        console.log('🔄 Starting automatic group assignment for existing users...');
+        const Group = require('./models/Group.model');
+        const { skillCategories } = require('./service/groupAlgorithm');
+        
+        const existingGroups = await Group.find();
+        if (existingGroups.length === 0) {
+            console.log('📦 No groups found. Creating default groups...');
+            
+            for (const [name, data] of Object.entries(skillCategories)) {
+                const group = new Group({
+                    name,
+                    icon: data.icon,
+                    color: data.color,
+                    description: data.description,
+                    members: [],
+                    messages: []
+                });
+                
+                await group.save();
+                console.log(`✅ Created: ${data.icon} ${name}`);
+            }
+            console.log('✅ All groups initialized!');
+        } else {
+            console.log(`✅ Found ${existingGroups.length} existing groups`);
+        }
+
         // Auto-assign existing users to groups on startup
         const { assignExistingUsers } = require('./service/autoGroupAssignment');
         await assignExistingUsers();
