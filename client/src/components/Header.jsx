@@ -54,6 +54,9 @@ export default function Header() {
               <button onClick={() => navigate('/dashboard')} className="hover:text-blue-400 transition-colors">
                 Home
               </button>
+              <button onClick={() => navigate('/chats')} className="hover:text-blue-400 transition-colors">
+                Chats
+              </button>
               <button onClick={() => navigate('/profile')} className="hover:text-blue-400 transition-colors">
                 Profile
               </button>
@@ -103,6 +106,9 @@ export default function Header() {
               <>
                 <button onClick={() => { navigate('/dashboard'); setMobileMenuOpen(false); }} className="text-left py-2 hover:text-blue-400 transition-colors">
                   Home
+                </button>
+                <button onClick={() => { navigate('/chats'); setMobileMenuOpen(false); }} className="text-left py-2 hover:text-blue-400 transition-colors">
+                  Chats
                 </button>
                 <button onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }} className="text-left py-2 hover:text-blue-400 transition-colors">
                   Profile

@@ -12,6 +12,7 @@ const swapRoutes = require('./routes/swap.routes');
 const chatRoutes = require('./routes/chat.routes');
 const contactRoutes = require('./routes/contact.routes');
 const aiRoutes = require('./routes/ai.routes');
+const groupRoutes = require('./routes/group.routes');
 
 // Create the Express app and HTTP server
 const app = express();
@@ -57,8 +58,14 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' })); // Accept JSON up to 10MB (for profile images)
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Serve uploaded files
-app.use('/uploads', express.static('uploads'));
+// Serve uploaded files with proper CORS headers
+const path = require('path');
+app.use('/uploads', (req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET');
+    res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express.static(path.join(__dirname, 'uploads')));
 
 // Make Socket.io available in our routes
 app.set('io', io);
@@ -70,6 +77,7 @@ app.use('/api/swap', swapRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/groups', groupRoutes);
 
 // Basic health check endpoint
 app.get('/', (req, res) => {
@@ -108,6 +116,10 @@ mongoose.connect(uri)
             console.log('Index cleanup check completed');
         }
 
+        // Auto-assign existing users to groups on startup
+        const { assignExistingUsers } = require('./service/autoGroupAssignment');
+        await assignExistingUsers();
+
         // Start the server once database is ready
         server.listen(PORT, () => {
             console.log(`Server is running on port✔ ${PORT}`);
@@ -121,17 +133,30 @@ mongoose.connect(uri)
 const connectedUsers = new Map();
 const User = require('./models/User.model');
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
     console.log('User connected:', socket.id);
 
-    // When a user joins, store their socket ID
-    socket.on('join', (userId) => {
+    // When a user joins, store their socket ID and update online status
+    socket.on('join', async (userId) => {
         connectedUsers.set(userId, socket.id);
         console.log(`User ${userId} joined with socket ${socket.id}`);
+        
+        // Update user's online status
+        try {
+            await User.findByIdAndUpdate(userId, { 
+                isOnline: true, 
+                lastSeen: new Date() 
+            });
+            
+            // Broadcast online status to all connected users
+            io.emit('user_status_change', { userId, isOnline: true });
+        } catch (err) {
+            console.error('Error updating online status:', err);
+        }
     });
 
     // Send private messages between users
-    socket.on('send_message', async ({ senderId, receiverId, message }) => {
+    socket.on('send_message', async ({ senderId, receiverId, message, _id }) => {
         const receiverSocketId = connectedUsers.get(receiverId);
         if (receiverSocketId) {
             // Fetch sender info for notification
@@ -149,9 +174,22 @@ io.on('connection', (socket) => {
                 senderId,
                 senderName,
                 message,
-                timestamp: new Date()
+                timestamp: new Date(),
+                _id
             });
         }
+    });
+    
+    // Handle group messages
+    socket.on('send_group_message', async ({ senderId, groupId, message, messageData }) => {
+        // Broadcast to all group members
+        io.emit('receive_group_message', {
+            groupId,
+            senderId,
+            message,
+            messageData,
+            timestamp: new Date()
+        });
     });
 
     // Show typing indicator to the other person
@@ -168,14 +206,36 @@ io.on('connection', (socket) => {
             io.to(receiverSocketId).emit('user_stop_typing', { senderId });
         }
     });
+    
+    // Group typing indicators
+    socket.on('group_typing', ({ senderId, groupId }) => {
+        io.emit('group_user_typing', { senderId, groupId });
+    });
+
+    socket.on('group_stop_typing', ({ senderId, groupId }) => {
+        io.emit('group_user_stop_typing', { senderId, groupId });
+    });
 
     // Clean up when user disconnects
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
         console.log('User disconnected:', socket.id);
-        // Remove them from the active users map
+        // Remove them from the active users map and update status
         for (const [userId, socketId] of connectedUsers.entries()) {
             if (socketId === socket.id) {
                 connectedUsers.delete(userId);
+                
+                // Update user's offline status
+                try {
+                    await User.findByIdAndUpdate(userId, { 
+                        isOnline: false, 
+                        lastSeen: new Date() 
+                    });
+                    
+                    // Broadcast offline status
+                    io.emit('user_status_change', { userId, isOnline: false });
+                } catch (err) {
+                    console.error('Error updating offline status:', err);
+                }
                 break;
             }
         }

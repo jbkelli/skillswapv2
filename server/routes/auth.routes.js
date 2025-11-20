@@ -3,6 +3,8 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');///Importing the user model
+const Group = require('../models/Group.model');
+const { assignNewUser } = require('../service/autoGroupAssignment');
 
 
 //Registering a new user
@@ -42,6 +44,9 @@ router.post('/signup', async(req, res) => {
 
         //Save the user
         await newUser.save();
+        
+        // Automatically assign user to groups based on their skills
+        await assignNewUser(newUser);
 
         //Create JWT token
         const token = jwt.sign(
@@ -61,7 +66,8 @@ router.post('/signup', async(req, res) => {
                 username: newUser.username,
                 email: newUser.email,
                 skillsHave: newUser.skillsHave,
-                skillsWant: newUser.skillsWant
+                skillsWant: newUser.skillsWant,
+                groups: newUser.groups
             }
         });
 

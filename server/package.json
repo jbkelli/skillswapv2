@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
-    "clean": "node scripts/cleanDatabase.js"
+    "clean": "node scripts/cleanDatabase.js",
+    "assign-groups": "node scripts/assignUsersToGroups.js"
   },
   "keywords": [],
   "author": "",

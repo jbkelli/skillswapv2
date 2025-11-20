@@ -50,6 +50,14 @@ const userSchema = new Schema(
             type: String,
             default: ''
         },
+        profilePicture: {
+            type: String,
+            default: ''
+        },
+        profileImage: {
+            type: String,
+            default: ''
+        },
         location: {
             type: String,
             default: ''
@@ -59,7 +67,33 @@ const userSchema = new Schema(
             linkedin: { type: String, default: '' },
             github: { type: String, default: '' },
             twitter: { type: String, default: '' }
-        }
+        },
+        isOnline: {
+            type: Boolean,
+            default: false
+        },
+        lastSeen: {
+            type: Date,
+            default: Date.now
+        },
+        groups: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Group'
+        }],
+        lockedGroups: [{
+            groupId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Group'
+            },
+            lockedUntil: {
+                type: Date,
+                default: null
+            },
+            attempts: {
+                type: Number,
+                default: 0
+            }
+        }]
     },
     {
         timestamps: true,

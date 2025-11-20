@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Message = require('../models/Message.model');
+const User = require('../models/User.model');
 const authMiddleware = require('../middleware/auth.middleware');
 const multer = require('multer');
 const path = require('path');
@@ -40,6 +41,58 @@ const upload = multer({
     }
 });
 
+// Get all conversations for a user
+router.get('/conversations', authMiddleware, async (req, res) => {
+    try {
+        // Find all messages where user is either sender or receiver
+        const messages = await Message.find({
+            $or: [
+                { sender: req.user.id },
+                { receiver: req.user.id }
+            ]
+        })
+        .sort({ createdAt: -1 })
+        .populate('sender', 'firstName lastName username profilePicture')
+        .populate('receiver', 'firstName lastName username profilePicture');
+
+        // Group messages by conversation partner
+        const conversationsMap = new Map();
+        
+        for (const message of messages) {
+            // Determine who the other user is
+            const otherUser = message.sender._id.toString() === req.user.id 
+                ? message.receiver 
+                : message.sender;
+            
+            const otherUserId = otherUser._id.toString();
+            
+            // If we haven't seen this user yet, add them
+            if (!conversationsMap.has(otherUserId)) {
+                // Count unread messages from this user
+                const unreadCount = await Message.countDocuments({
+                    sender: otherUserId,
+                    receiver: req.user.id,
+                    read: false
+                });
+                
+                conversationsMap.set(otherUserId, {
+                    user: otherUser,
+                    lastMessage: message,
+                    unreadCount: unreadCount
+                });
+            }
+        }
+
+        // Convert map to array
+        const conversations = Array.from(conversationsMap.values());
+
+        res.status(200).json({ conversations });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error fetching conversations' });
+    }
+});
+
 // Get chat history between two users
 router.get('/:userId', authMiddleware, async (req, res) => {
     try {
@@ -53,7 +106,8 @@ router.get('/:userId', authMiddleware, async (req, res) => {
         })
         .sort({ createdAt: 1 })
         .populate('sender', 'firstName lastName username')
-        .populate('receiver', 'firstName lastName username');
+        .populate('receiver', 'firstName lastName username')
+        .populate('vallyTriggeredBy', 'firstName lastName username');
 
         res.status(200).json({ messages });
     } catch (err) {
@@ -65,8 +119,46 @@ router.get('/:userId', authMiddleware, async (req, res) => {
 // Save a new message
 router.post('/send', authMiddleware, async (req, res) => {
     try {
-        const { receiverId, message } = req.body;
+        const { receiverId, message, isVally, vallyResponse } = req.body;
 
+        // If this is a Vally interaction, save both messages
+        if (isVally && vallyResponse) {
+            // Save user's @vally question
+            const userMessage = new Message({
+                sender: req.user.id,
+                receiver: receiverId,
+                message,
+                messageType: 'text'
+            });
+            await userMessage.save();
+
+            // Save Vally's response
+            const vallyMessage = new Message({
+                sender: req.user.id,
+                receiver: receiverId,
+                message: vallyResponse,
+                messageType: 'text',
+                isVally: true,
+                vallyTriggeredBy: req.user.id
+            });
+            await vallyMessage.save();
+
+            const populatedUserMsg = await Message.findById(userMessage._id)
+                .populate('sender', 'firstName lastName username')
+                .populate('receiver', 'firstName lastName username');
+            
+            const populatedVallyMsg = await Message.findById(vallyMessage._id)
+                .populate('sender', 'firstName lastName username')
+                .populate('receiver', 'firstName lastName username')
+                .populate('vallyTriggeredBy', 'firstName lastName username');
+
+            return res.status(201).json({ 
+                message: 'Messages sent',
+                data: [populatedUserMsg, populatedVallyMsg]
+            });
+        }
+
+        // Regular message
         const newMessage = new Message({
             sender: req.user.id,
             receiver: receiverId,

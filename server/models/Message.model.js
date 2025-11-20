@@ -37,6 +37,15 @@ const messageSchema = new Schema(
         read: {
             type: Boolean,
             default: false
+        },
+        isVally: {
+            type: Boolean,
+            default: false
+        },
+        vallyTriggeredBy: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+            required: false
         }
     },
     {

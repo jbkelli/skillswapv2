@@ -9,26 +9,13 @@ import NeuralBackground from '../components/NeuralBackground';
 import Footer from '../components/Footer';
 import { SOCKET_URL, API_BASE_URL, SERVER_URL } from '../config/api';
 
-const socket = io(SOCKET_URL);
-
 export default function ChatPage() {
   const { userId } = useParams();
   const { user } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
   
-  // Load messages from localStorage to persist Vally conversations
-  const [messages, setMessages] = useState(() => {
-    const savedMessages = localStorage.getItem(`chatMessages_${userId}`);
-    if (savedMessages) {
-      try {
-        return JSON.parse(savedMessages);
-      } catch (e) {
-        console.error('Failed to parse saved messages:', e);
-      }
-    }
-    return [];
-  });
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [otherUser, setOtherUser] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -41,8 +28,17 @@ export default function ChatPage() {
   const messagesContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
+  const socketRef = useRef(null);
+  const hasLoadedMessages = useRef(false);
 
+  // Initialize socket connection once
   useEffect(() => {
+    if (!socketRef.current) {
+      socketRef.current = io(SOCKET_URL);
+    }
+    
+    const socket = socketRef.current;
+
     // Request notification permissions
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
@@ -54,18 +50,37 @@ export default function ChatPage() {
     // Load info about who we're chatting with
     fetchOtherUser();
 
-    // Load the conversation history
-    fetchMessages();
+    // Load the conversation history only once
+    if (!hasLoadedMessages.current) {
+      fetchMessages();
+      hasLoadedMessages.current = true;
+    }
 
     // Set up listener for new messages
     const handleReceiveMessage = (data) => {
       // Only add the message if it's from the person we're chatting with
       if (data.senderId === userId) {
-        setMessages(prev => [...prev, {
-          sender: { _id: userId, firstName: otherUser?.firstName, lastName: otherUser?.lastName },
-          message: data.message,
-          createdAt: data.timestamp
-        }]);
+        setMessages(prev => {
+          // Check if message already exists to avoid duplicates
+          const exists = prev.some(msg => 
+            msg._id === data._id ||
+            (msg.message === data.message && 
+            msg.sender?._id === userId &&
+            Math.abs(new Date(msg.createdAt) - new Date(data.timestamp)) < 1000)
+          );
+          
+          if (exists) return prev;
+          
+          return [...prev, {
+            sender: { _id: userId, firstName: otherUser?.firstName, lastName: otherUser?.lastName },
+            message: data.message,
+            createdAt: data.timestamp || new Date().toISOString(),
+            _id: data._id,
+            isVally: data.isVally || false,
+            vallyTriggeredBy: data.isVally ? { firstName: otherUser?.firstName } : null
+          }];
+        });
+        setIsUserScrolling(false); // Auto-scroll to new message
       }
     };
 
@@ -88,48 +103,67 @@ export default function ChatPage() {
       socket.off('receive_message', handleReceiveMessage);
       socket.off('user_typing');
       socket.off('user_stop_typing');
+      // Don't disconnect here as we want to keep the connection alive
+      // It will be cleaned up when component unmounts
     };
-  }, [userId, user.id, otherUser]);
+  }, [userId, user.id]); // Removed otherUser from dependencies
 
-  // Save messages to localStorage whenever they change
+  // Cleanup on unmount
   useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem(`chatMessages_${userId}`, JSON.stringify(messages));
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, []);
+
+  // Save messages to localStorage (debounced)
+  useEffect(() => {
+    if (messages.length > 0 && hasLoadedMessages.current) {
+      const timer = setTimeout(() => {
+        // Only save Vally messages to localStorage
+        const vallyMessages = messages.filter(msg => msg.isVally || msg.sender?._id === 'vally');
+        if (vallyMessages.length > 0) {
+          localStorage.setItem(`chatMessages_${userId}`, JSON.stringify(vallyMessages));
+        }
+      }, 500); // Debounce for 500ms
+      
+      return () => clearTimeout(timer);
     }
   }, [messages, userId]);
 
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (!isUserScrolling) {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    
+    // Check if user is near the bottom before auto-scrolling
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+    
+    // Only auto-scroll if user is already near the bottom or if it's a Vally response
+    if (isNearBottom || !isUserScrolling) {
       scrollToBottom();
     }
-  }, [messages, isUserScrolling]);
+  }, [messages]);
 
   // Detect if user is scrolling up
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
 
-    let scrollTimeout;
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = container;
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
       
-      // If user scrolls up, disable auto-scroll
-      if (!isAtBottom) {
-        setIsUserScrolling(true);
-      } else {
-        // Use timeout to avoid rapid state changes
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-          setIsUserScrolling(false);
-        }, 100);
-      }
+      // Update scrolling state based on position
+      setIsUserScrolling(!isNearBottom);
     };
 
     container.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       container.removeEventListener('scroll', handleScroll);
-      clearTimeout(scrollTimeout);
     };
   }, []);
 
@@ -147,39 +181,61 @@ export default function ChatPage() {
       const response = await api.get(`/chat/${userId}`);
       const dbMessages = response.data.messages;
       
-      // Get existing messages from localStorage (includes Vally messages)
-      const existingMessages = messages.length > 0 ? messages : [];
-      const vallyMessages = existingMessages.filter(msg => msg.isVally || msg.sender._id === 'vally');
+      // Get Vally messages from localStorage
+      const savedMessages = localStorage.getItem(`chatMessages_${userId}`);
+      let vallyMessages = [];
       
-      // Create a Set of DB message IDs to avoid duplicates
-      const dbMessageIds = new Set(dbMessages.map(msg => msg._id));
+      if (savedMessages) {
+        try {
+          const parsed = JSON.parse(savedMessages);
+          vallyMessages = parsed.filter(msg => msg.isVally || msg.sender?._id === 'vally');
+        } catch (e) {
+          console.error('Failed to parse saved messages:', e);
+        }
+      }
       
-      // Keep Vally messages and any local messages not in DB yet
-      const localOnlyMessages = existingMessages.filter(msg => 
-        (msg.isVally || msg.sender._id === 'vally') || !msg._id || !dbMessageIds.has(msg._id)
-      );
+      // Merge DB messages with Vally messages and remove duplicates
+      const allMessages = [...dbMessages, ...vallyMessages];
+      const uniqueMessages = allMessages.reduce((acc, msg) => {
+        const isDuplicate = acc.some(m => 
+          m._id === msg._id || 
+          (m.message === msg.message && m.createdAt === msg.createdAt)
+        );
+        if (!isDuplicate) acc.push(msg);
+        return acc;
+      }, []);
       
-      // Merge: DB messages + local-only messages (like Vally)
-      const mergedMessages = [...dbMessages, ...localOnlyMessages].sort((a, b) => 
-        new Date(a.createdAt) - new Date(b.createdAt)
-      );
+      // Sort by date
+      uniqueMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       
-      setMessages(mergedMessages);
+      setMessages(uniqueMessages);
       setLoading(false);
 
       // Mark everything as read since we're viewing the chat
       await api.put(`/chat/read/${userId}`);
+      
+      // Scroll to bottom after messages load
+      setTimeout(() => {
+        scrollToBottom(true);
+      }, 100);
     } catch (err) {
       console.error('Failed to fetch messages');
       setLoading(false);
     }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (instant = false) => {
+    if (instant) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
+    } else {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const handleTyping = () => {
+    const socket = socketRef.current;
+    if (!socket) return;
+    
     socket.emit('typing', { senderId: user.id, receiverId: userId });
 
     if (typingTimeoutRef.current) {
@@ -219,6 +275,8 @@ export default function ChatPage() {
 
   const handleSendFile = async () => {
     if (!selectedFile) return;
+    const socket = socketRef.current;
+    if (!socket) return;
 
     try {
       const formData = new FormData();
@@ -239,7 +297,8 @@ export default function ChatPage() {
         message: response.data.data.message || 'Sent a file',
         fileUrl: response.data.data.fileUrl,
         fileName: response.data.data.fileName,
-        messageType: response.data.data.messageType
+        messageType: response.data.data.messageType,
+        _id: response.data.data._id
       });
 
       setMessages(prev => [...prev, response.data.data]);
@@ -254,6 +313,8 @@ export default function ChatPage() {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
+    const socket = socketRef.current;
+    if (!socket) return;
     
     // If there's a file selected, send it instead
     if (selectedFile) {
@@ -272,15 +333,9 @@ export default function ChatPage() {
         return;
       }
 
-      // Show the user's question in the chat
-      const userMsg = {
-        sender: { _id: user.id, firstName: user.firstName, lastName: user.lastName },
-        message: newMessage,
-        createdAt: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, userMsg]);
       setNewMessage('');
       setVallyTyping(true);
+      setIsUserScrolling(false);
 
       try {
         // Ask Vally for a response
@@ -294,26 +349,37 @@ export default function ChatPage() {
         });
 
         const data = await response.json();
+        const vallyResponseText = data.response || 'Sorry, I couldn\'t process that. Try again!';
         
-        // Display what Vally said
-        const vallyMsg = {
-          sender: { _id: 'vally', firstName: 'Vally', lastName: 'AI' },
-          message: data.response || 'Sorry, I couldn\'t process that. Try again!',
-          createdAt: new Date().toISOString(),
+        // Save both user question and Vally response to database
+        const saveResponse = await api.post('/chat/send', {
+          receiverId: userId,
+          message: newMessage,
           isVally: true,
-          messageType: 'text'
-        };
-        setMessages(prev => [...prev, vallyMsg]);
-        setIsUserScrolling(false); // Allow auto-scroll to new message
+          vallyResponse: vallyResponseText
+        });
+
+        // Add both messages to UI
+        const savedMessages = Array.isArray(saveResponse.data.data) 
+          ? saveResponse.data.data 
+          : [saveResponse.data.data];
+        
+        setMessages(prev => [...prev, ...savedMessages]);
+        setIsUserScrolling(false);
+
+        // Broadcast to other user via socket
+        savedMessages.forEach(msg => {
+          socket.emit('send_message', {
+            senderId: user.id,
+            receiverId: userId,
+            message: msg.message,
+            _id: msg._id,
+            isVally: msg.isVally
+          });
+        });
       } catch (err) {
         console.error('Vally error:', err);
-        const errorMsg = {
-          sender: { _id: 'vally', firstName: 'Vally', lastName: 'AI' },
-          message: 'Oops! I had a hiccup. Try asking me again! 😊',
-          createdAt: new Date().toISOString(),
-          isVally: true
-        };
-        setMessages(prev => [...prev, errorMsg]);
+        showNotification('Failed to get Vally response', 'error');
       } finally {
         setVallyTyping(false);
       }
@@ -332,12 +398,14 @@ export default function ChatPage() {
       socket.emit('send_message', {
         senderId: user.id,
         receiverId: userId,
-        message: newMessage
+        message: newMessage,
+        _id: response.data.data._id
       });
 
       // Show it in the UI immediately
       setMessages(prev => [...prev, response.data.data]);
       setNewMessage('');
+      setIsUserScrolling(false); // Auto-scroll to sent message
       socket.emit('stop_typing', { senderId: user.id, receiverId: userId });
     } catch (err) {
       console.error('Failed to send message');
@@ -420,7 +488,7 @@ export default function ChatPage() {
             };
             
             return (
-              <React.Fragment key={idx}>
+              <React.Fragment key={msg._id || msg.tempId || `msg-${idx}`}>
                 {/* Date Separator */}
                 {showDateSeparator && (
                   <div className="flex justify-center my-4">
@@ -431,19 +499,24 @@ export default function ChatPage() {
                 )}
                 
                 {/* Message */}
-                <div className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
+                <div className={`flex ${isVallyMessage ? 'justify-center' : isMyMessage ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[70%] ${isMyMessage ? 'order-2' : 'order-1'}`}>
-                    {!isMyMessage && (
-                      <p className={`text-xs mb-1 ${isVallyMessage ? 'text-purple-400 font-semibold' : 'text-gray-400'}`}>
-                        {isVallyMessage ? '🤖 Vally AI' : `${msg.sender.firstName} ${msg.sender.lastName}`}
+                    {!isMyMessage && !isVallyMessage && (
+                      <p className="text-xs mb-1 text-gray-400">
+                        {msg.sender.firstName} {msg.sender.lastName}
+                      </p>
+                    )}
+                    {isVallyMessage && (
+                      <p className="text-xs mb-1 text-purple-400 font-semibold text-center">
+                        🤖 Vally AI (asked by {msg.vallyTriggeredBy?.firstName || msg.sender?.firstName || 'someone'})
                       </p>
                     )}
                     <div
                       className={`rounded-2xl px-4 py-3 ${
-                        isMyMessage
+                        isVallyMessage
+                          ? 'bg-linear-to-br from-purple-600 to-pink-600 text-white'
+                          : isMyMessage
                           ? 'bg-blue-600 text-white rounded-br-none'
-                          : isVallyMessage
-                          ? 'bg-linear-to-br from-purple-600 to-pink-600 text-white rounded-bl-none'
                           : 'bg-gray-800 text-gray-100 rounded-bl-none'
                       }`}
                     >

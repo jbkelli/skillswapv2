@@ -1,22 +1,62 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import { swapService } from '../services';
 import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
+import { SOCKET_URL } from '../config/api';
 import Header from '../components/Header';
 import NeuralBackground from '../components/NeuralBackground';
 import Footer from '../components/Footer';
+import OnlineIndicator from '../components/OnlineIndicator';
 
 export default function RequestsPage() {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
+  const { user } = useAuth();
   const [receivedRequests, setReceivedRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [activeTab, setActiveTab] = useState('received');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userStatuses, setUserStatuses] = useState({});
+  const socketRef = useRef(null);
 
   useEffect(() => {
     fetchRequests();
+  }, []);
+
+  // Socket for online status
+  useEffect(() => {
+    if (!socketRef.current) {
+      socketRef.current = io(SOCKET_URL);
+    }
+
+    const socket = socketRef.current;
+    socket.emit('join', user.id);
+
+    socket.on('user_status_change', ({ userId, isOnline, lastSeen }) => {
+      setUserStatuses(prev => ({
+        ...prev,
+        [userId]: { isOnline, lastSeen }
+      }));
+    });
+
+    return () => {
+      if (socket) {
+        socket.off('user_status_change');
+      }
+    };
+  }, [user.id]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
   }, []);
 
   const fetchRequests = async () => {
@@ -132,24 +172,41 @@ export default function RequestsPage() {
                   className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-blue-500 transition-all"
                 >
                   <div className="flex items-start gap-4">
-                    {request.sender.profilePicture ? (
-                      <img 
-                        src={request.sender.profilePicture} 
-                        alt={`${request.sender.firstName} ${request.sender.lastName}`}
-                        className="w-16 h-16 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold">
-                        {request.sender.firstName?.[0]}{request.sender.lastName?.[0]}
+                    <div className="relative">
+                      {request.sender.profilePicture ? (
+                        <img 
+                          src={request.sender.profilePicture} 
+                          alt={`${request.sender.firstName} ${request.sender.lastName}`}
+                          className="w-16 h-16 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold">
+                          {request.sender.firstName?.[0]}{request.sender.lastName?.[0]}
+                        </div>
+                      )}
+                      <div className="absolute bottom-0 right-0">
+                        <OnlineIndicator 
+                          isOnline={userStatuses[request.sender._id]?.isOnline ?? request.sender.isOnline ?? false}
+                          size="md"
+                          lastSeen={userStatuses[request.sender._id]?.lastSeen ?? request.sender.lastSeen}
+                        />
                       </div>
-                    )}
+                    </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="text-xl font-bold">
                             {request.sender.firstName} {request.sender.lastName}
                           </h3>
-                          <p className="text-gray-400 text-sm">@{request.sender.username}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-gray-400 text-sm">@{request.sender.username}</p>
+                            <OnlineIndicator 
+                              isOnline={userStatuses[request.sender._id]?.isOnline ?? request.sender.isOnline ?? false}
+                              showLabel={true}
+                              size="sm"
+                              lastSeen={userStatuses[request.sender._id]?.lastSeen ?? request.sender.lastSeen}
+                            />
+                          </div>
                         </div>
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -216,7 +273,7 @@ export default function RequestsPage() {
                       {request.status === 'accepted' && (
                         <div className="flex gap-3">
                           <button
-                            onClick={() => navigate(`/chat/${request.sender._id}`)}
+                            onClick={() => navigate(`/chats/${request.sender._id}`)}
                             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors font-semibold"
                           >
                             Start Chat
@@ -258,24 +315,41 @@ export default function RequestsPage() {
                   className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-blue-500 transition-all"
                 >
                   <div className="flex items-start gap-4">
-                    {request.receiver.profilePicture ? (
-                      <img 
-                        src={request.receiver.profilePicture} 
-                        alt={`${request.receiver.firstName} ${request.receiver.lastName}`}
-                        className="w-16 h-16 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold">
-                        {request.receiver.firstName?.[0]}{request.receiver.lastName?.[0]}
+                    <div className="relative">
+                      {request.receiver.profilePicture ? (
+                        <img 
+                          src={request.receiver.profilePicture} 
+                          alt={`${request.receiver.firstName} ${request.receiver.lastName}`}
+                          className="w-16 h-16 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold">
+                          {request.receiver.firstName?.[0]}{request.receiver.lastName?.[0]}
+                        </div>
+                      )}
+                      <div className="absolute bottom-0 right-0">
+                        <OnlineIndicator 
+                          isOnline={userStatuses[request.receiver._id]?.isOnline ?? request.receiver.isOnline ?? false}
+                          size="md"
+                          lastSeen={userStatuses[request.receiver._id]?.lastSeen ?? request.receiver.lastSeen}
+                        />
                       </div>
-                    )}
+                    </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="text-xl font-bold">
                             {request.receiver.firstName} {request.receiver.lastName}
                           </h3>
-                          <p className="text-gray-400 text-sm">@{request.receiver.username}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-gray-400 text-sm">@{request.receiver.username}</p>
+                            <OnlineIndicator 
+                              isOnline={userStatuses[request.receiver._id]?.isOnline ?? request.receiver.isOnline ?? false}
+                              showLabel={true}
+                              size="sm"
+                              lastSeen={userStatuses[request.receiver._id]?.lastSeen ?? request.receiver.lastSeen}
+                            />
+                          </div>
                         </div>
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -301,7 +375,7 @@ export default function RequestsPage() {
                       <div className="flex gap-2 mt-3">
                         {request.status === 'accepted' && (
                           <button
-                            onClick={() => navigate(`/chat/${request.receiver._id}`)}
+                            onClick={() => navigate(`/chats/${request.receiver._id}`)}
                             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors font-semibold"
                           >
                             Start Chat
@@ -326,7 +400,7 @@ export default function RequestsPage() {
       </main>
       
       <Footer />
+      </div>
     </div>
-  </div>
   );
 }

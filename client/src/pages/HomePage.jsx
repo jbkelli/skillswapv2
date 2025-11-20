@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { userService, swapService } from '../services';
 import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
+import { SOCKET_URL } from '../config/api';
 import Header from '../components/Header';
 import NeuralBackground from '../components/NeuralBackground';
 import Footer from '../components/Footer';
 import AIChatbot from '../components/AIChatbot';
+import OnlineIndicator from '../components/OnlineIndicator';
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -20,10 +23,45 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSkill, setFilterSkill] = useState('');
   const [activeTab, setActiveTab] = useState('swappies'); // 'swappies' or 'discover'
+  const [userStatuses, setUserStatuses] = useState({});
   const navigate = useNavigate();
+  const socketRef = useRef(null);
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  // Socket for online status
+  useEffect(() => {
+    if (!socketRef.current) {
+      socketRef.current = io(SOCKET_URL);
+    }
+
+    const socket = socketRef.current;
+    socket.emit('join', user.id);
+
+    socket.on('user_status_change', ({ userId, isOnline, lastSeen }) => {
+      setUserStatuses(prev => ({
+        ...prev,
+        [userId]: { isOnline, lastSeen }
+      }));
+    });
+
+    return () => {
+      if (socket) {
+        socket.off('user_status_change');
+      }
+    };
+  }, [user.id]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
   }, []);
 
   const fetchData = async () => {
@@ -164,7 +202,7 @@ export default function HomePage() {
   };
 
   const handleStartChat = (userId) => {
-    navigate(`/chat/${userId}`);
+    navigate(`/chats/${userId}`);
   };
 
   // See if we already sent them a request
@@ -284,25 +322,43 @@ export default function HomePage() {
                   className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-6 hover:border-blue-500 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20"
                 >
                   <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                    {otherUser.profilePicture ? (
-                      <img 
-                        src={otherUser.profilePicture} 
-                        alt={`${otherUser.firstName} ${otherUser.lastName}`}
-                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover shrink-0"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg sm:text-2xl font-bold shrink-0">
-                        {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
+                    <div className="relative">
+                      {otherUser.profilePicture ? (
+                        <img 
+                          src={otherUser.profilePicture} 
+                          alt={`${otherUser.firstName} ${otherUser.lastName}`}
+                          className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover shrink-0"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg sm:text-2xl font-bold shrink-0">
+                          {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
+                        </div>
+                      )}
+                      {/* Online status indicator */}
+                      <div className="absolute bottom-0 right-0">
+                        <OnlineIndicator 
+                          isOnline={userStatuses[otherUser._id]?.isOnline ?? otherUser.isOnline ?? false}
+                          size="md"
+                          lastSeen={userStatuses[otherUser._id]?.lastSeen ?? otherUser.lastSeen}
+                        />
                       </div>
-                    )}
+                    </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="text-base sm:text-xl font-bold truncate">{otherUser.firstName} {otherUser.lastName}</h3>
                       <p className="text-gray-400 text-xs sm:text-sm truncate">@{otherUser.username}</p>
-                      {isSwappie && (
-                        <span className="inline-block mt-1 bg-green-600/30 text-green-300 px-2 py-0.5 sm:py-1 rounded text-xs">
-                          ✓ Connected
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2 mt-1">
+                        {isSwappie && (
+                          <span className="inline-block bg-green-600/30 text-green-300 px-2 py-0.5 sm:py-1 rounded text-xs">
+                            ✓ Connected
+                          </span>
+                        )}
+                        <OnlineIndicator 
+                          isOnline={userStatuses[otherUser._id]?.isOnline ?? otherUser.isOnline ?? false}
+                          showLabel={true}
+                          size="sm"
+                          lastSeen={userStatuses[otherUser._id]?.lastSeen ?? otherUser.lastSeen}
+                        />
+                      </div>
                     </div>
                   </div>
 

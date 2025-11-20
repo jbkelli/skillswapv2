@@ -9,6 +9,7 @@ import ProfilePage from './pages/ProfilePage';
 import UserProfilePage from './pages/UserProfilePage';
 import RequestsPage from './pages/RequestsPage';
 import ChatPage from './pages/ChatPage';
+import ChatsPage from './pages/ChatsPage';
 import ContactPage from './pages/ContactPage';
 import NotificationPermission from './components/NotificationPermission';
 
@@ -81,6 +82,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <GroupsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/chats" 
+            element={
+              <ProtectedRoute>
+                <ChatsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/chats/:userId" 
+            element={
+              <ProtectedRoute>
+                <ChatsPage />
               </ProtectedRoute>
             } 
           />
