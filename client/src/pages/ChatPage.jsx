@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import api from '../services/api';
 import Header from '../components/Header';
 import NeuralBackground from '../components/NeuralBackground';
 import Footer from '../components/Footer';
-import { SOCKET_URL, API_BASE_URL, SERVER_URL } from '../config/api';
+import { API_BASE_URL, SERVER_URL } from '../config/api';
+import { getSocket } from '../services/socket';
 
 export default function ChatPage() {
   const { userId } = useParams();
@@ -31,13 +31,14 @@ export default function ChatPage() {
   const socketRef = useRef(null);
   const hasLoadedMessages = useRef(false);
 
-  // Initialize socket connection once
+  // Initialize socket connection once with authentication
   useEffect(() => {
-    if (!socketRef.current) {
-      socketRef.current = io(SOCKET_URL);
-    }
-    
-    const socket = socketRef.current;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // Get authenticated socket instance
+    const socket = getSocket(token);
+    socketRef.current = socket;
 
     // Request notification permissions
     if ('Notification' in window && Notification.permission === 'default') {
@@ -103,20 +104,9 @@ export default function ChatPage() {
       socket.off('receive_message', handleReceiveMessage);
       socket.off('user_typing');
       socket.off('user_stop_typing');
-      // Don't disconnect here as we want to keep the connection alive
-      // It will be cleaned up when component unmounts
+      // Don't disconnect - socket is singleton
     };
   }, [userId, user.id]); // Removed otherUser from dependencies
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-    };
-  }, []);
 
   // Save messages to localStorage (debounced)
   useEffect(() => {
@@ -452,7 +442,15 @@ export default function ChatPage() {
                 )}
                 <div>
                   <h2 className="font-bold">{otherUser.firstName} {otherUser.lastName}</h2>
-                  <p className="text-sm text-gray-400">@{otherUser.username}</p>
+                  <p className="text-sm text-gray-400">
+                    {otherUser.isOnline ? (
+                      <span className="text-green-400">● Online</span>
+                    ) : otherUser.lastSeen ? (
+                      <span>Last seen: {new Date(otherUser.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} {new Date(otherUser.lastSeen).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                    ) : (
+                      <span>@{otherUser.username}</span>
+                    )}
+                  </p>
                 </div>
               </div>
             )}
@@ -524,10 +522,13 @@ export default function ChatPage() {
                       {msg.messageType === 'image' && msg.fileUrl && (
                         <div className="mb-2">
                           <img 
-                            src={`${SERVER_URL}${msg.fileUrl}`}
+                            src={msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`}
                             alt={msg.fileName || 'Image'}
                             className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                            onClick={() => window.open(`${SERVER_URL}${msg.fileUrl}`, '_blank')}
+                            onClick={() => {
+                              const fileUrl = msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`;
+                              window.open(fileUrl, '_blank');
+                            }}
                           />
                         </div>
                       )}
@@ -550,7 +551,10 @@ export default function ChatPage() {
                           </div>
                           <div className="flex gap-2 mt-3">
                             <button
-                              onClick={() => window.open(`${SERVER_URL}${msg.fileUrl}`, '_blank')}
+                              onClick={() => {
+                                const fileUrl = msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`;
+                                window.open(fileUrl, '_blank');
+                              }}
                               className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -560,7 +564,7 @@ export default function ChatPage() {
                               View
                             </button>
                             <a
-                              href={`${SERVER_URL}${msg.fileUrl}`}
+                              href={msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`}
                               download={msg.fileName}
                               className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
                             >

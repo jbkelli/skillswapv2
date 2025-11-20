@@ -1,5 +1,5 @@
 // client/src/App.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import AuthPage from './pages/AuthPage';
@@ -12,6 +12,7 @@ import ChatPage from './pages/ChatPage';
 import ChatsPage from './pages/ChatsPage';
 import ContactPage from './pages/ContactPage';
 import NotificationPermission from './components/NotificationPermission';
+import keepaliveService from './services/keepalive';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -30,6 +31,19 @@ function ProtectedRoute({ children }) {
 
 function App() {
   const { isAuthenticated } = useAuth();
+
+  // Start keepalive service when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      keepaliveService.start();
+    } else {
+      keepaliveService.stop();
+    }
+
+    return () => {
+      keepaliveService.stop();
+    };
+  }, [isAuthenticated]);
 
   return (
     <div className="font-sans">

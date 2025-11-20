@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import api from '../services/api';
@@ -8,7 +7,8 @@ import Header from '../components/Header';
 import NeuralBackground from '../components/NeuralBackground';
 import Footer from '../components/Footer';
 import GroupQuiz from '../components/GroupQuiz';
-import { SOCKET_URL, API_BASE_URL, SERVER_URL } from '../config/api';
+import { API_BASE_URL, SERVER_URL } from '../config/api';
+import { getSocket } from '../services/socket';
 
 export default function GroupsPage() {
   const { groupId: urlGroupId } = useParams();
@@ -38,13 +38,15 @@ export default function GroupsPage() {
   const fileInputRef = useRef(null);
   const socketRef = useRef(null);
 
-  // Initialize socket
+  // Initialize socket with authentication
   useEffect(() => {
-    if (!socketRef.current) {
-      socketRef.current = io(SOCKET_URL);
-    }
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // Get authenticated socket instance
+    const socket = getSocket(token);
+    socketRef.current = socket;
     
-    const socket = socketRef.current;
     socket.emit('join', user.id);
 
     // Listen for group messages
@@ -72,18 +74,9 @@ export default function GroupsPage() {
     return () => {
       socket.off('receive_group_message');
       socket.off('group_user_typing');
+      // Don't disconnect on unmount - socket is singleton
     };
   }, [selectedGroupId, user.id]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-    };
-  }, []);
 
   // Fetch user's groups
   useEffect(() => {
@@ -553,10 +546,13 @@ export default function GroupsPage() {
                               {msg.messageType === 'image' && msg.fileUrl && (
                                 <div className="mb-2">
                                   <img 
-                                    src={`${SERVER_URL}${msg.fileUrl}`}
+                                    src={msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`}
                                     alt={msg.fileName || 'Image'}
                                     className="max-w-full rounded-lg cursor-pointer hover:opacity-90"
-                                    onClick={() => window.open(`${SERVER_URL}${msg.fileUrl}`, '_blank')}
+                                    onClick={() => {
+                                      const fileUrl = msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`;
+                                      window.open(fileUrl, '_blank');
+                                    }}
                                   />
                                 </div>
                               )}
@@ -576,7 +572,10 @@ export default function GroupsPage() {
                                   </div>
                                   <div className="flex gap-2 mt-3">
                                     <button
-                                      onClick={() => window.open(`${SERVER_URL}${msg.fileUrl}`, '_blank')}
+                                      onClick={() => {
+                                        const fileUrl = msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`;
+                                        window.open(fileUrl, '_blank');
+                                      }}
                                       className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
                                     >
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -586,7 +585,7 @@ export default function GroupsPage() {
                                       View
                                     </button>
                                     <a
-                                      href={`${SERVER_URL}${msg.fileUrl}`}
+                                      href={msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`}
                                       download={msg.fileName}
                                       className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
                                     >
@@ -737,7 +736,7 @@ export default function GroupsPage() {
                         {member.isOnline ? (
                           <span className="text-green-400">Online</span>
                         ) : member.lastSeen ? (
-                          <span>Last seen: {new Date(member.lastSeen).toLocaleDateString()}</span>
+                          <span>Last seen: {new Date(member.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} {new Date(member.lastSeen).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                         ) : (
                           <span>Offline</span>
                         )}

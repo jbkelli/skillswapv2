@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth.middleware');
 const { AI, injector } = require('../service/emailGenerator');
+const { aiLimiter } = require('../middleware/rateLimiter.middleware');
 
 // Here's everything Vally knows about SkillSwap
 const SKILLSWAP_CONTEXT = `You are Vally, a friendly and helpful AI assistant for SkillSwap.
@@ -42,7 +43,7 @@ PLATFORM FEATURES:
 IMPORTANT: Be concise and natural. Answer questions directly without repeatedly introducing yourself. Only mention your name if it's the first message or if specifically asked. Be encouraging, friendly, and helpful.`;
 
 // Endpoint to generate professional cold emails using AI
-router.post('/generate-email', authMiddleware, async (req, res) => {
+router.post('/generate-email', authMiddleware, aiLimiter, async (req, res) => {
     try {
         const { sender, receiver, bizName, category, pitch } = req.body;
 
@@ -70,7 +71,7 @@ router.post('/generate-email', authMiddleware, async (req, res) => {
 });
 
 // Main chat endpoint where Vally responds to user questions
-router.post('/chat', authMiddleware, async (req, res) => {
+router.post('/chat', authMiddleware, aiLimiter, async (req, res) => {
     try {
         const { prompt } = req.body;
 

@@ -210,6 +210,10 @@ export default function HomePage() {
     return sentRequests.find(req => req.receiver._id === userId && req.status === 'pending');
   };
 
+  const getProfilePicture = (user) => {
+    return user?.profilePicture || user?.profilePic || user?.profileImage;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -323,9 +327,9 @@ export default function HomePage() {
                 >
                   <div className="flex items-center gap-3 sm:gap-4 mb-4">
                     <div className="relative">
-                      {otherUser.profilePicture ? (
+                      {getProfilePicture(otherUser) ? (
                         <img 
-                          src={otherUser.profilePicture} 
+                          src={getProfilePicture(otherUser)} 
                           alt={`${otherUser.firstName} ${otherUser.lastName}`}
                           className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover shrink-0"
                         />

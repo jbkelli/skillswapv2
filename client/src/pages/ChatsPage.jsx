@@ -460,9 +460,9 @@ export default function ChatsPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        {conv.user.profilePicture ? (
+                        {getProfilePicture(conv.user) ? (
                           <img 
-                            src={conv.user.profilePicture} 
+                            src={getProfilePicture(conv.user)} 
                             alt={`${conv.user.firstName} ${conv.user.lastName}`}
                             className="w-12 h-12 rounded-full object-cover"
                           />
@@ -522,9 +522,9 @@ export default function ChatsPage() {
                     </svg>
                   </button>
                   <div className="relative">
-                    {otherUser.profilePicture ? (
+                    {getProfilePicture(otherUser) ? (
                       <img 
-                        src={otherUser.profilePicture} 
+                        src={getProfilePicture(otherUser)} 
                         alt={`${otherUser.firstName} ${otherUser.lastName}`}
                         className="w-10 h-10 rounded-full object-cover"
                       />
@@ -608,10 +608,13 @@ export default function ChatsPage() {
                               {msg.messageType === 'image' && msg.fileUrl && (
                                 <div className="mb-2">
                                   <img 
-                                    src={`${SERVER_URL}${msg.fileUrl}`}
+                                    src={msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`}
                                     alt={msg.fileName || 'Image'}
                                     className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                                    onClick={() => window.open(`${SERVER_URL}${msg.fileUrl}`, '_blank')}
+                                    onClick={() => {
+                                      const fileUrl = msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`;
+                                      window.open(fileUrl, '_blank');
+                                    }}
                                   />
                                 </div>
                               )}
@@ -633,7 +636,10 @@ export default function ChatsPage() {
                                   </div>
                                   <div className="flex gap-2 mt-3">
                                     <button
-                                      onClick={() => window.open(`${SERVER_URL}${msg.fileUrl}`, '_blank')}
+                                      onClick={() => {
+                                        const fileUrl = msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`;
+                                        window.open(fileUrl, '_blank');
+                                      }}
                                       className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
                                     >
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -643,7 +649,7 @@ export default function ChatsPage() {
                                       View
                                     </button>
                                     <a
-                                      href={`${SERVER_URL}${msg.fileUrl}`}
+                                      href={msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`}
                                       download={msg.fileName}
                                       className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
                                     >

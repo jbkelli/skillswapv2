@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authService } from '../services';
 import { useNotification } from './NotificationContext';
+import { disconnectSocket } from '../services/socket';
 
 const AuthContext = createContext(null);
 
@@ -148,6 +149,10 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     setLastActivity(Date.now());
+    
+    // Disconnect socket on logout
+    disconnectSocket();
+    
     showNotification('You have been logged out successfully.', 'info');
   };
 

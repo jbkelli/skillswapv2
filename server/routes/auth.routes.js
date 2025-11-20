@@ -5,10 +5,12 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');///Importing the user model
 const Group = require('../models/Group.model');
 const { assignNewUser } = require('../service/autoGroupAssignment');
+const { loginLimiter, signupLimiter } = require('../middleware/rateLimiter.middleware');
+const { signupValidation, loginValidation } = require('../middleware/validation.middleware');
 
 
 //Registering a new user
-router.post('/signup', async(req, res) => {
+router.post('/signup', signupLimiter, signupValidation, async(req, res) => {
     try{
         //getting the fields from the request body
         const { firstName, lastName, username, email, password, skillsHave, skillsWant } = req.body;
@@ -48,11 +50,11 @@ router.post('/signup', async(req, res) => {
         // Automatically assign user to groups based on their skills
         await assignNewUser(newUser);
 
-        //Create JWT token
+        //Create JWT token (expires in 24 hours for security)
         const token = jwt.sign(
             { id: newUser._id, username: newUser.username },
             process.env.JWT_SECRET,
-            { expiresIn: '3d' }
+            { expiresIn: '24h' }
         );
 
         //Send response
@@ -79,7 +81,7 @@ router.post('/signup', async(req, res) => {
 });
 
 //Login routes
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, loginValidation, async (req, res) => {
     try{
         //get email and password from the password
         const { email, password } = req.body;
@@ -113,11 +115,11 @@ router.post('/login', async (req, res) => {
 
         console.log('Login successful for user:', email);
 
-        //If user is valid,, create a new JWT token
+        //If user is valid,, create a new JWT token (expires in 24 hours for security)
         const token = jwt.sign(
             { id: user._id, username: user.username },
             process.env.JWT_SECRET,
-            { expiresIn: '3d' }
+            { expiresIn: '24h' }
         );
 
         //Send the token and the user info back(Not including the password)

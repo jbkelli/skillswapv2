@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
+const { contactValidation } = require('../middleware/validation.middleware');
 
 // Set up email sending with Gmail
 const transporter = nodemailer.createTransport({
@@ -22,7 +23,7 @@ transporter.verify(function(error, success) {
 });
 
 // Handle contact form submissions
-router.post('/send', async (req, res) => {
+router.post('/send', contactValidation, async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
 

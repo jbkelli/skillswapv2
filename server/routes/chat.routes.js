@@ -3,6 +3,7 @@ const router = express.Router();
 const Message = require('../models/Message.model');
 const User = require('../models/User.model');
 const authMiddleware = require('../middleware/auth.middleware');
+const { messageValidation } = require('../middleware/validation.middleware');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -28,15 +29,32 @@ const upload = multer({
         fileSize: 10 * 1024 * 1024 // 10MB limit
     },
     fileFilter: (req, file, cb) => {
-        // Allow images and common file types
-        const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|txt|zip|mp4|mov/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
+        // Whitelist of allowed MIME types (more secure than regex on extensions)
+        const allowedMimeTypes = [
+            // Images
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            // Documents
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'text/plain',
+            // Archives
+            'application/zip',
+            'application/x-zip-compressed',
+            // Videos
+            'video/mp4',
+            'video/quicktime'
+        ];
 
-        if (extname && mimetype) {
+        // Check actual MIME type
+        if (allowedMimeTypes.includes(file.mimetype)) {
             return cb(null, true);
         } else {
-            cb(new Error('Invalid file type. Only images, PDFs, documents, and videos are allowed.'));
+            cb(new Error('Invalid file type. Only images, PDFs, documents, text files, and videos are allowed.'));
         }
     }
 });
@@ -52,8 +70,8 @@ router.get('/conversations', authMiddleware, async (req, res) => {
             ]
         })
         .sort({ createdAt: -1 })
-        .populate('sender', 'firstName lastName username profilePicture')
-        .populate('receiver', 'firstName lastName username profilePicture');
+        .populate('sender', 'firstName lastName username profilePicture profilePic profileImage')
+        .populate('receiver', 'firstName lastName username profilePicture profilePic profileImage');
 
         // Group messages by conversation partner
         const conversationsMap = new Map();
@@ -105,8 +123,8 @@ router.get('/:userId', authMiddleware, async (req, res) => {
             ]
         })
         .sort({ createdAt: 1 })
-        .populate('sender', 'firstName lastName username')
-        .populate('receiver', 'firstName lastName username')
+        .populate('sender', 'firstName lastName username profilePicture profilePic profileImage')
+        .populate('receiver', 'firstName lastName username profilePicture profilePic profileImage')
         .populate('vallyTriggeredBy', 'firstName lastName username');
 
         res.status(200).json({ messages });

@@ -53,6 +53,12 @@ const messageSchema = new Schema(
     }
 );
 
+// Add indexes for faster message queries
+messageSchema.index({ sender: 1, receiver: 1 });
+messageSchema.index({ receiver: 1, sender: 1 });
+messageSchema.index({ createdAt: -1 });
+messageSchema.index({ read: 1 });
+
 const Message = mongoose.model('Message', messageSchema);
 
 module.exports = Message;
