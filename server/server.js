@@ -4,6 +4,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const http = require('http');
 const { Server } = require('socket.io');
+// Security middleware removed - reverted to stable version
 
 // Import all our route handlers
 const authRoutes = require('./routes/auth.routes');
