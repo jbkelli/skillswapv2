@@ -17,13 +17,7 @@ const authMiddleware = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (err) {
-        // More specific error messages for debugging (but not too specific for security)
-        if (err.name === 'TokenExpiredError') {
-            return res.status(401).json({ message: 'Token has expired' });
-        } else if (err.name === 'JsonWebTokenError') {
-            return res.status(401).json({ message: 'Invalid token' });
-        }
-        res.status(401).json({ message: 'Token verification failed' });
+        res.status(401).json({ message: 'Token is not valid' });
     }
 };
 

@@ -5,12 +5,10 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');///Importing the user model
 const Group = require('../models/Group.model');
 const { assignNewUser } = require('../service/autoGroupAssignment');
-const { loginLimiter, signupLimiter } = require('../middleware/rateLimiter.middleware');
-const { signupValidation, loginValidation } = require('../middleware/validation.middleware');
 
 
 //Registering a new user
-router.post('/signup', signupLimiter, signupValidation, async(req, res) => {
+router.post('/signup', async(req, res) => {
     try{
         //getting the fields from the request body
         const { firstName, lastName, username, email, password, skillsHave, skillsWant } = req.body;
@@ -81,7 +79,7 @@ router.post('/signup', signupLimiter, signupValidation, async(req, res) => {
 });
 
 //Login routes
-router.post('/login', loginLimiter, loginValidation, async (req, res) => {
+router.post('/login', async (req, res) => {
     try{
         //get email and password from the password
         const { email, password } = req.body;

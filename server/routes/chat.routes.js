@@ -3,7 +3,6 @@ const router = express.Router();
 const Message = require('../models/Message.model');
 const User = require('../models/User.model');
 const authMiddleware = require('../middleware/auth.middleware');
-const { messageValidation } = require('../middleware/validation.middleware');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');

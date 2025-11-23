@@ -4,8 +4,6 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const http = require('http');
 const { Server } = require('socket.io');
-const helmet = require('helmet');
-const { apiLimiter } = require('./middleware/rateLimiter.middleware');
 
 // Import all our route handlers
 const authRoutes = require('./routes/auth.routes');
@@ -40,26 +38,6 @@ const io = new Server(server, {
     }
 });
 
-// Middleware setup
-// Security headers
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", ...allowedOrigins],
-            fontSrc: ["'self'", "data:"],
-            objectSrc: ["'none'"],
-            mediaSrc: ["'self'"],
-            frameSrc: ["'none'"],
-        },
-    },
-    crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
-
 // CORS configuration
 app.use(cors({
     origin: function (origin, callback) {
@@ -77,9 +55,6 @@ app.use(cors({
     },
     credentials: true
 }));
-
-// Apply general rate limiting to all API routes
-app.use('/api/', apiLimiter);
 
 app.use(express.json({ limit: '10mb' })); // Accept JSON up to 10MB (for profile images)
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
