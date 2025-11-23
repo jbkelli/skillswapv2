@@ -162,14 +162,17 @@ export default function ChatPage() {
       const response = await api.get(`/users/${userId}`);
       setOtherUser(response.data.user);
     } catch (err) {
-      console.error('Failed to fetch user');
+      console.error('Failed to fetch user:', err);
+      showNotification('Failed to load user profile', 'error');
+      // Set a default user object to prevent crashes
+      setOtherUser({ firstName: 'User', lastName: '', _id: userId });
     }
   };
 
   const fetchMessages = async () => {
     try {
       const response = await api.get(`/chat/${userId}`);
-      const dbMessages = response.data.messages;
+      const dbMessages = response.data.messages || [];
       
       // Get Vally messages from localStorage
       const savedMessages = localStorage.getItem(`chatMessages_${userId}`);
@@ -202,14 +205,20 @@ export default function ChatPage() {
       setLoading(false);
 
       // Mark everything as read since we're viewing the chat
-      await api.put(`/chat/read/${userId}`);
+      try {
+        await api.put(`/chat/read/${userId}`);
+      } catch (e) {
+        console.error('Failed to mark messages as read:', e);
+      }
       
       // Scroll to bottom after messages load
       setTimeout(() => {
         scrollToBottom(true);
       }, 100);
     } catch (err) {
-      console.error('Failed to fetch messages');
+      console.error('Failed to fetch messages:', err);
+      showNotification('Failed to load messages. Please try again.', 'error');
+      setMessages([]);
       setLoading(false);
     }
   };
