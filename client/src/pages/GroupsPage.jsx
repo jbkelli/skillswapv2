@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import api from '../services/api';
@@ -7,8 +8,7 @@ import Header from '../components/Header';
 import NeuralBackground from '../components/NeuralBackground';
 import Footer from '../components/Footer';
 import GroupQuiz from '../components/GroupQuiz';
-import { API_BASE_URL, SERVER_URL } from '../config/api';
-import { getSocket } from '../services/socket';
+import { SOCKET_URL, API_BASE_URL, SERVER_URL } from '../config/api';
 
 export default function GroupsPage() {
   const { groupId: urlGroupId } = useParams();
@@ -38,15 +38,13 @@ export default function GroupsPage() {
   const fileInputRef = useRef(null);
   const socketRef = useRef(null);
 
-  // Initialize socket with authentication
+  // Initialize socket
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    // Get authenticated socket instance
-    const socket = getSocket(token);
-    socketRef.current = socket;
+    if (!socketRef.current) {
+      socketRef.current = io(SOCKET_URL);
+    }
     
+    const socket = socketRef.current;
     socket.emit('join', user.id);
 
     // Listen for group messages
@@ -74,9 +72,18 @@ export default function GroupsPage() {
     return () => {
       socket.off('receive_group_message');
       socket.off('group_user_typing');
-      // Don't disconnect on unmount - socket is singleton
     };
   }, [selectedGroupId, user.id]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, []);
 
   // Fetch user's groups
   useEffect(() => {

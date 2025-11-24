@@ -48,11 +48,11 @@ router.post('/signup', async(req, res) => {
         // Automatically assign user to groups based on their skills
         await assignNewUser(newUser);
 
-        //Create JWT token (expires in 24 hours for security)
+        //Create JWT token
         const token = jwt.sign(
             { id: newUser._id, username: newUser.username },
             process.env.JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: '3d' }
         );
 
         //Send response
@@ -113,11 +113,11 @@ router.post('/login', async (req, res) => {
 
         console.log('Login successful for user:', email);
 
-        //If user is valid,, create a new JWT token (expires in 24 hours for security)
+        //If user is valid,, create a new JWT token
         const token = jwt.sign(
             { id: user._id, username: user.username },
             process.env.JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: '3d' }
         );
 
         //Send the token and the user info back(Not including the password)

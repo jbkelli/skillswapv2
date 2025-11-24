@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import api from '../services/api';
 import Header from '../components/Header';
 import NeuralBackground from '../components/NeuralBackground';
 import Footer from '../components/Footer';
-import { API_BASE_URL, SERVER_URL } from '../config/api';
-import { getSocket } from '../services/socket';
+import { SOCKET_URL, API_BASE_URL, SERVER_URL } from '../config/api';
 
 export default function ChatPage() {
   const { userId } = useParams();
@@ -31,108 +31,92 @@ export default function ChatPage() {
   const socketRef = useRef(null);
   const hasLoadedMessages = useRef(false);
 
-  // Initialize socket connection once with authentication
+  // Initialize socket connection once
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      showNotification('Please log in to access chat', 'error');
-      navigate('/login');
-      return;
+    if (!socketRef.current) {
+      socketRef.current = io(SOCKET_URL);
+    }
+    
+    const socket = socketRef.current;
+
+    // Request notification permissions
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
     }
 
-    try {
-      // Get authenticated socket instance
-      const socket = getSocket(token);
-      socketRef.current = socket;
+    // Connect this user to the chat socket
+    socket.emit('join', user.id);
 
-      // Request notification permissions
-      if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-      }
+    // Load info about who we're chatting with
+    fetchOtherUser();
 
-      // Connect this user to the chat socket
-      socket.emit('join', user.id);
-
-      // Load info about who we're chatting with
-      fetchOtherUser();
-
-      // Load the conversation history only once
-      if (!hasLoadedMessages.current) {
-        fetchMessages();
-        hasLoadedMessages.current = true;
-      }
-
-      // Set up listener for new messages
-      const handleReceiveMessage = (data) => {
-        try {
-          // Only add the message if it's from the person we're chatting with
-          if (data.senderId === userId) {
-            setMessages(prev => {
-              // Check if message already exists to avoid duplicates
-              const exists = prev.some(msg => 
-                msg._id === data._id ||
-                (msg.message === data.message && 
-                msg.sender?._id === userId &&
-                Math.abs(new Date(msg.createdAt) - new Date(data.timestamp)) < 1000)
-              );
-              
-              if (exists) return prev;
-              
-              return [...prev, {
-                sender: { _id: userId, firstName: otherUser?.firstName, lastName: otherUser?.lastName },
-                message: data.message,
-                createdAt: data.timestamp || new Date().toISOString(),
-                _id: data._id,
-                isVally: data.isVally || false,
-                vallyTriggeredBy: data.isVally ? { firstName: otherUser?.firstName } : null
-              }];
-            });
-            setIsUserScrolling(false); // Auto-scroll to new message
-          }
-        } catch (err) {
-          console.error('Error handling received message:', err);
-        }
-      };
-
-      socket.on('receive_message', handleReceiveMessage);
-
-      // Handle socket errors
-      socket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
-        showNotification('Connection issues. Messages may be delayed.', 'warning');
-      });
-
-      socket.on('error', (error) => {
-        console.error('Socket error:', error);
-      });
-
-      // Show when the other person is typing
-      socket.on('user_typing', (data) => {
-        if (data.senderId === userId) {
-          setIsTyping(true);
-        }
-      });
-
-      socket.on('user_stop_typing', (data) => {
-        if (data.senderId === userId) {
-          setIsTyping(false);
-        }
-      });
-
-      return () => {
-        socket.off('receive_message', handleReceiveMessage);
-        socket.off('user_typing');
-        socket.off('user_stop_typing');
-        socket.off('connect_error');
-        socket.off('error');
-        // Don't disconnect - socket is singleton
-      };
-    } catch (err) {
-      console.error('Error initializing chat:', err);
-      showNotification('Failed to initialize chat', 'error');
-      setLoading(false);
+    // Load the conversation history only once
+    if (!hasLoadedMessages.current) {
+      fetchMessages();
+      hasLoadedMessages.current = true;
     }
+
+    // Set up listener for new messages
+    const handleReceiveMessage = (data) => {
+      // Only add the message if it's from the person we're chatting with
+      if (data.senderId === userId) {
+        setMessages(prev => {
+          // Check if message already exists to avoid duplicates
+          const exists = prev.some(msg => 
+            msg._id === data._id ||
+            (msg.message === data.message && 
+            msg.sender?._id === userId &&
+            Math.abs(new Date(msg.createdAt) - new Date(data.timestamp)) < 1000)
+          );
+          
+          if (exists) return prev;
+          
+          return [...prev, {
+            sender: { _id: userId, firstName: otherUser?.firstName, lastName: otherUser?.lastName },
+            message: data.message,
+            createdAt: data.timestamp || new Date().toISOString(),
+            _id: data._id,
+            isVally: data.isVally || false,
+            vallyTriggeredBy: data.isVally ? { firstName: otherUser?.firstName } : null
+          }];
+        });
+        setIsUserScrolling(false); // Auto-scroll to new message
+      }
+    };
+
+    socket.on('receive_message', handleReceiveMessage);
+
+    // Show when the other person is typing
+    socket.on('user_typing', (data) => {
+      if (data.senderId === userId) {
+        setIsTyping(true);
+      }
+    });
+
+    socket.on('user_stop_typing', (data) => {
+      if (data.senderId === userId) {
+        setIsTyping(false);
+      }
+    });
+
+    return () => {
+      socket.off('receive_message', handleReceiveMessage);
+      socket.off('user_typing');
+      socket.off('user_stop_typing');
+      // Don't disconnect here as we want to keep the connection alive
+      // It will be cleaned up when component unmounts
+    };
   }, [userId, user.id]); // Removed otherUser from dependencies
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, []);
 
   // Save messages to localStorage (debounced)
   useEffect(() => {
@@ -188,10 +172,7 @@ export default function ChatPage() {
       const response = await api.get(`/users/${userId}`);
       setOtherUser(response.data.user);
     } catch (err) {
-      console.error('Failed to fetch user:', err);
-      showNotification('Failed to load user information', 'error');
-      // Don't crash the page, just continue without user info
-      setOtherUser({ firstName: 'User', lastName: '' });
+      console.error('Failed to fetch user');
     }
   };
 
@@ -231,22 +212,15 @@ export default function ChatPage() {
       setLoading(false);
 
       // Mark everything as read since we're viewing the chat
-      try {
-        await api.put(`/chat/read/${userId}`);
-      } catch (err) {
-        console.error('Failed to mark as read:', err);
-      }
+      await api.put(`/chat/read/${userId}`);
       
       // Scroll to bottom after messages load
       setTimeout(() => {
         scrollToBottom(true);
       }, 100);
     } catch (err) {
-      console.error('Failed to fetch messages:', err);
-      showNotification('Failed to load messages', 'error');
+      console.error('Failed to fetch messages');
       setLoading(false);
-      // Don't crash, just show empty messages
-      setMessages([]);
     }
   };
 

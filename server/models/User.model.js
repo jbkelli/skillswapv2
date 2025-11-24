@@ -100,11 +100,6 @@ const userSchema = new Schema(
     }
 );
 
-// Add indexes for faster queries (email and username already indexed by unique: true)
-userSchema.index({ skillsHave: 1 });
-userSchema.index({ skillsWant: 1 });
-userSchema.index({ isOnline: 1 });
-
 //Creates the user from the blueprint
 const User = mongoose.model('User', userSchema);
 

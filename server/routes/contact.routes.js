@@ -4,48 +4,38 @@ const nodemailer = require('nodemailer');
 
 // Set up email sending with Gmail
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Use TLS
+    service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false
     }
 });
 
-// Optional email verification - only in development
-if (process.env.NODE_ENV !== 'production') {
-    transporter.verify(function(error, success) {
-        if (error) {
-            console.log('Note: Email service not configured (optional feature)');
-        } else {
-            console.log('✓ Email server is ready');
-        }
-    });
-}
+// Make sure email is properly configured
+transporter.verify(function(error, success) {
+    if (error) {
+        console.log('Email configuration error:', error);
+        console.log('Please configure EMAIL_USER and EMAIL_PASS in your .env file');
+    } else {
+        console.log('Email server is ready to send messages');
+    }
+});
 
 // Handle contact form submissions
 router.post('/send', async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
 
-        // Basic validation
+        // Make sure we have everything we need
         if (!name || !email || !subject || !message) {
-            return res.status(400).json({ 
-                message: 'All fields are required'
-            });
+            return res.status(400).json({ message: 'All fields are required' });
         }
 
         // Check if email is set up properly
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.log('Email credentials not configured');
-            // Email not configured - provide alternative contact method
-            return res.status(200).json({ 
-                message: 'Thank you for your message! Please contact us directly at tech.marval.innovations@gmail.com or 444mwangialvinm@gmail.com',
-                fallback: true
+            console.error('Email not configured - EMAIL_USER and EMAIL_PASS missing');
+            return res.status(503).json({ 
+                message: 'Email service is currently unavailable. Please try again later or contact us directly at tech.marval.innovations@gmail.com' 
             });
         }
 
@@ -64,22 +54,13 @@ router.post('/send', async (req, res) => {
             `
         };
 
-        console.log('Attempting to send email...');
         await transporter.sendMail(mailOptions);
-        console.log('Email sent successfully');
 
         res.status(200).json({ message: 'Email sent successfully' });
     } catch (err) {
         console.error('Email error:', err);
-        console.error('Error details:', {
-            code: err.code,
-            command: err.command,
-            response: err.response
-        });
-        
-        // Return user-friendly error
         res.status(500).json({ 
-            message: 'Failed to send email. The email service is experiencing issues. Please contact us directly at 444mwangialvinm@gmail.com',
+            message: 'Failed to send email. Please check email configuration.',
             error: err.message 
         });
     }
