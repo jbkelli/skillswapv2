@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NeuralBackground from '../components/NeuralBackground';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
-import { API_BASE_URL } from '../config/api';
 
 export default function ContactPage() {
   const { logout, isAuthenticated } = useAuth();
@@ -19,6 +18,21 @@ export default function ContactPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
+  // Load EmailJS script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
+    script.async = true;
+    script.onload = () => {
+      window.emailjs.init('GUKwuORANwROFrNHj'); 
+    };
+    document.body.appendChild(script);
+    
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -29,24 +43,29 @@ export default function ContactPage() {
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/contact/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+      // Using EmailJS to send email directly from client
+      const result = await window.emailjs.send(
+        'service_9azunie',   
+        'YOUR_Ttemplate_lo2bja8EMPLATE_ID', 
+        {
+          from_name: formData.name,
+          from_email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+          to_email: '444mwangialvinm@gmail.com, tech.marval.innovations@gmail.com'
+        }
+      );
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (result.text === 'OK') {
         setSuccess(true);
         setFormData({ name: '', email: '', subject: '', message: '' });
         setTimeout(() => setSuccess(false), 5000);
       } else {
-        setError(data.message || 'Failed to send message. Please check your email configuration.');
+        setError('Failed to send message. Please try again.');
       }
     } catch (err) {
       console.error('Contact form error:', err);
-      setError('Failed to send message. Make sure the server is running and email is configured.');
+      setError('Failed to send message. Please try again later or contact us directly at tech.marval.innovations@gmail.com');
     }
 
     setLoading(false);
