@@ -10,7 +10,7 @@ const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const swapRoutes = require('./routes/swap.routes');
 const chatRoutes = require('./routes/chat.routes');
-const contactRoutes = require('./routes/contact.routes');
+// Contact route removed - now using EmailJS on client-side
 const aiRoutes = require('./routes/ai.routes');
 const groupRoutes = require('./routes/group.routes');
 
@@ -75,7 +75,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/swap', swapRoutes);
 app.use('/api/chat', chatRoutes);
-app.use('/api/contact', contactRoutes);
+// app.use('/api/contact', contactRoutes); // Removed - using EmailJS on client
 app.use('/api/ai', aiRoutes);
 app.use('/api/groups', groupRoutes);
 

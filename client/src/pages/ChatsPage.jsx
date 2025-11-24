@@ -29,6 +29,7 @@ export default function ChatsPage() {
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [userStatuses, setUserStatuses] = useState({});
+  const [imageErrors, setImageErrors] = useState({});
   
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -473,26 +474,19 @@ export default function ChatsPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        {getProfilePicture(conv.user) ? (
-                          <img 
-                            src={getProfilePicture(conv.user)} 
-                            alt={`${conv.user.firstName} ${conv.user.lastName}`}
-                            className="w-12 h-12 rounded-full object-cover"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextElementSibling.style.display = 'flex';
-                            }}
-                          />
+                        {getProfilePicture(conv.user) && !imageErrors[conv.user._id] ? (
+                          <>
+                            <img 
+                              src={getProfilePicture(conv.user)} 
+                              alt={`${conv.user.firstName} ${conv.user.lastName}`}
+                              className="w-12 h-12 rounded-full object-cover"
+                              onError={() => {
+                                setImageErrors(prev => ({ ...prev, [conv.user._id]: true }));
+                              }}
+                            />
+                          </>
                         ) : (
                           <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold">
-                            {conv.user.firstName?.[0]}{conv.user.lastName?.[0]}
-                          </div>
-                        )}
-                        {getProfilePicture(conv.user) && (
-                          <div 
-                            className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold"
-                            style={{ display: 'none' }}
-                          >
                             {conv.user.firstName?.[0]}{conv.user.lastName?.[0]}
                           </div>
                         )}
@@ -547,26 +541,19 @@ export default function ChatsPage() {
                     </svg>
                   </button>
                   <div className="relative">
-                    {getProfilePicture(otherUser) ? (
-                      <img 
-                        src={getProfilePicture(otherUser)} 
-                        alt={`${otherUser.firstName} ${otherUser.lastName}`}
-                        className="w-10 h-10 rounded-full object-cover"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextElementSibling.style.display = 'flex';
-                        }}
-                      />
+                    {getProfilePicture(otherUser) && !imageErrors[selectedUserId] ? (
+                      <>
+                        <img 
+                          src={getProfilePicture(otherUser)} 
+                          alt={`${otherUser.firstName} ${otherUser.lastName}`}
+                          className="w-10 h-10 rounded-full object-cover"
+                          onError={() => {
+                            setImageErrors(prev => ({ ...prev, [selectedUserId]: true }));
+                          }}
+                        />
+                      </>
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold">
-                        {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
-                      </div>
-                    )}
-                    {getProfilePicture(otherUser) && (
-                      <div 
-                        className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold"
-                        style={{ display: 'none' }}
-                      >
                         {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
                       </div>
                     )}
