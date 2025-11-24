@@ -129,7 +129,7 @@ export default function AIChatbot() {
         <div className="fixed bottom-24 right-6 z-50">
           <button
             onClick={() => setIsOpen(true)}
-            className="bg-linear-to-br from-purple-600 to-pink-600 text-white px-6 py-4 rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center gap-2"
+            className="bg-pink-600 text-white px-6 py-4 rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center gap-2"
           >
             <span className="font-bold text-lg">VALLY</span>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,14 +143,14 @@ export default function AIChatbot() {
       {isOpen && (
         <div className="fixed bottom-24 right-6 w-96 h-[600px] bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl z-50 flex flex-col">
           {/* Header */}
-          <div className="bg-linear-to-r from-purple-600 to-pink-600 p-4 rounded-t-2xl flex justify-between items-center shrink-0">
+          <div className="bg-pink-600 p-4 rounded-t-2xl flex justify-between items-center shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center font-bold text-purple-600">
+              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center font-bold text-pink-600">
                 V
               </div>
               <div>
                 <h4 className="font-bold">Vally - AI Assistant</h4>
-                <p className="text-xs text-purple-100">Powered by Gemini</p>
+                <p className="text-xs text-pink-100">Powered by Gemini</p>
               </div>
             </div>
             <button
@@ -227,12 +227,12 @@ export default function AIChatbot() {
                       onChange={(e) => setInput(e.target.value)}
                       onKeyPress={handleKeyPress}
                       placeholder="Ask me anything..."
-                      className="flex-1 bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="flex-1 bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
                     />
                     <button
                       onClick={handleSendChat}
                       disabled={loading || !input.trim()}
-                      className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-500 transition-colors disabled:opacity-50 text-sm font-semibold"
+                      className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-500 transition-colors disabled:opacity-50 text-sm font-semibold"
                     >
                       Send
                     </button>
@@ -249,7 +249,7 @@ export default function AIChatbot() {
                       value={emailForm.sender}
                       onChange={(e) => setEmailForm({...emailForm, sender: e.target.value})}
                       required
-                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
                       placeholder="Your name"
                     />
                   </div>
@@ -260,7 +260,7 @@ export default function AIChatbot() {
                       value={emailForm.receiver}
                       onChange={(e) => setEmailForm({...emailForm, receiver: e.target.value})}
                       required
-                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
                       placeholder="Recipient name"
                     />
                   </div>
@@ -271,7 +271,7 @@ export default function AIChatbot() {
                       value={emailForm.bizName}
                       onChange={(e) => setEmailForm({...emailForm, bizName: e.target.value})}
                       required
-                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
                       placeholder="Your company"
                     />
                   </div>
@@ -282,7 +282,7 @@ export default function AIChatbot() {
                       value={emailForm.category}
                       onChange={(e) => setEmailForm({...emailForm, category: e.target.value})}
                       required
-                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
                       placeholder="e.g., SaaS, Marketing"
                     />
                   </div>
@@ -293,14 +293,14 @@ export default function AIChatbot() {
                       onChange={(e) => setEmailForm({...emailForm, pitch: e.target.value})}
                       required
                       rows={3}
-                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
                       placeholder="What value do you offer?"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-500 transition-colors font-semibold disabled:opacity-50"
+                    className="w-full bg-pink-600 text-white py-2 rounded-lg hover:bg-pink-500 transition-colors font-semibold disabled:opacity-50"
                   >
                     {loading ? 'Generating...' : 'Generate Email'}
                   </button>

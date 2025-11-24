@@ -580,7 +580,7 @@ export default function ChatsPage() {
                         <div className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
                           <div className={`max-w-[70%] ${isMyMessage ? 'order-2' : 'order-1'}`}>
                             {!isMyMessage && (
-                              <p className={`text-xs mb-1 ${isVallyMessage ? 'text-purple-400 font-semibold' : 'text-gray-400'}`}>
+                              <p className={`text-xs mb-1 ${isVallyMessage ? 'text-pink-400 font-semibold' : 'text-gray-400'}`}>
                                 {isVallyMessage ? '🤖 Vally AI' : `${msg.sender.firstName} ${msg.sender.lastName}`}
                               </p>
                             )}
@@ -589,7 +589,7 @@ export default function ChatsPage() {
                                 isMyMessage
                                   ? 'bg-blue-600 text-white rounded-br-none'
                                   : isVallyMessage
-                                  ? 'bg-linear-to-br from-purple-600 to-pink-600 text-white rounded-bl-none'
+                                  ? 'bg-pink-600 text-white rounded-bl-none'
                                   : 'bg-gray-800 text-gray-100 rounded-bl-none'
                               }`}
                             >
@@ -678,9 +678,9 @@ export default function ChatsPage() {
                   {(isTyping || vallyTyping) && (
                     <div className="flex justify-start">
                     <div className={`rounded-2xl px-4 py-3 rounded-bl-none ${
-                      vallyTyping ? 'bg-linear-to-br from-purple-600 to-pink-600' : 'bg-gray-800'
+                      vallyTyping ? 'bg-pink-600' : 'bg-gray-800'
                     }`}>
-                        {vallyTyping && <p className="text-xs text-purple-200 mb-1">🤖 Vally AI</p>}
+                        {vallyTyping && <p className="text-xs text-pink-200 mb-1">🤖 Vally AI</p>}
                         <div className="flex gap-1">
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -695,7 +695,7 @@ export default function ChatsPage() {
 
               {/* Message Input */}
               <div className="border-t border-gray-800 p-4 bg-gray-900">
-                <p className="text-xs text-gray-400 mb-2">💡 Tip: Type <span className="text-purple-400 font-semibold">@vally</span> to ask Vally AI a question!</p>
+                <p className="text-xs text-gray-400 mb-2">💡 Tip: Type <span className="text-pink-400 font-semibold">@vally</span> to ask Vally AI a question!</p>
                 
                 {selectedFile && (
                   <div className="mb-3 p-3 bg-gray-800 rounded-lg border border-gray-700">

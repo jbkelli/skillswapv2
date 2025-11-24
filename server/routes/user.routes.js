@@ -10,6 +10,7 @@ router.get('/all', authMiddleware, async (req, res) => {
         // Fetch everyone except the logged-in user, hide passwords
         const users = await User.find({ _id: { $ne: req.user.id } })
             .select('-password')
+            .populate('groups', 'name description members')
             .sort({ createdAt: -1 });
 
         res.status(200).json({ users });
@@ -22,7 +23,9 @@ router.get('/all', authMiddleware, async (req, res) => {
 // Look up a specific user's profile
 router.get('/:id', authMiddleware, async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).select('-password');
+        const user = await User.findById(req.params.id)
+            .select('-password')
+            .populate('groups', 'name description members');
         
         if (!user) {
             return res.status(404).json({ message: 'User not found' });

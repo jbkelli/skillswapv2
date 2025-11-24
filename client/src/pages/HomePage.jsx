@@ -398,6 +398,22 @@ export default function HomePage() {
                     </div>
                   </div>
 
+                  {otherUser.groups && otherUser.groups.length > 0 && (
+                    <div className="mb-3 sm:mb-4">
+                      <h4 className="text-xs sm:text-sm font-semibold text-green-400 mb-2">👥 Groups:</h4>
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                        {otherUser.groups.slice(0, 2).map((group, idx) => (
+                          <span key={idx} className="bg-green-600/30 text-green-300 px-2 py-0.5 sm:py-1 rounded text-xs">
+                            {group.name}
+                          </span>
+                        ))}
+                        {otherUser.groups.length > 2 && (
+                          <span className="text-gray-500 text-xs">+{otherUser.groups.length - 2} more</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex gap-2 mt-4">
                     <button
                       onClick={() => navigate(`/user/${otherUser._id}`)}

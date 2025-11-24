@@ -172,6 +172,35 @@ export default function UserProfilePage() {
             </div>
           </div>
 
+          {/* Groups */}
+          {user.groups && user.groups.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-2xl font-bold mb-4 text-green-400">👥 Groups</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {user.groups.map((group, idx) => (
+                  <div key={idx} className="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-green-500 transition-colors">
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-lg bg-linear-to-br from-green-500 to-teal-600 flex items-center justify-center text-xl font-bold flex-shrink-0">
+                        {group.name?.[0] || '?'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-lg font-semibold text-white truncate">{group.name || 'Unnamed Group'}</h4>
+                        {group.description && (
+                          <p className="text-gray-400 text-sm mt-1 line-clamp-2">{group.description}</p>
+                        )}
+                        {group.members && (
+                          <p className="text-gray-500 text-xs mt-2">
+                            {group.members.length} {group.members.length === 1 ? 'member' : 'members'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Contact Info */}
           {user.contacts && Object.values(user.contacts).some(val => val) && (
             <div>
