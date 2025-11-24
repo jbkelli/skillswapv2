@@ -37,6 +37,14 @@ export default function ChatsPage() {
   const socketRef = useRef(null);
   const hasLoadedMessages = useRef(false);
 
+  // Helper function to get profile picture URL
+  const getProfilePicture = (user) => {
+    if (!user) return null;
+    const picUrl = user.profilePicture || user.profilePic || user.profileImage;
+    if (!picUrl) return null;
+    return picUrl.startsWith('http') ? picUrl : `${SERVER_URL}${picUrl}`;
+  };
+
   // Initialize socket connection once
   useEffect(() => {
     if (!socketRef.current) {
