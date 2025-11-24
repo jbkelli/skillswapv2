@@ -184,29 +184,7 @@ export default function ChatsPage() {
     if (!selectedUserId) return;
     try {
       const response = await api.get(`/chat/${selectedUserId}`);
-      const dbMessages = response.data.messages;
-      
-      const savedMessages = localStorage.getItem(`chatMessages_${selectedUserId}`);
-      let vallyMessages = [];
-      
-      if (savedMessages) {
-        try {
-          const parsed = JSON.parse(savedMessages);
-          vallyMessages = parsed.filter(msg => msg.isVally || msg.sender?._id === 'vally');
-        } catch (e) {
-          console.error('Failed to parse saved messages:', e);
-        }
-      }
-      
-      const allMessages = [...dbMessages, ...vallyMessages];
-      const uniqueMessages = allMessages.reduce((acc, msg) => {
-        const isDuplicate = acc.some(m => 
-          m._id === msg._id || 
-          (m.message === msg.message && m.createdAt === msg.createdAt)
-        );
-        if (!isDuplicate) acc.push(msg);
-        return acc;
-      }, []);
+      const uniqueMessages = response.data.messages;
       
       uniqueMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       
@@ -322,13 +300,6 @@ export default function ChatsPage() {
         return;
       }
 
-      const userMsg = {
-        sender: { _id: user.id, firstName: user.firstName, lastName: user.lastName },
-        message: newMessage,
-        createdAt: new Date().toISOString(),
-        tempId: `temp-${Date.now()}`
-      };
-      setMessages(prev => [...prev, userMsg]);
       setNewMessage('');
       setVallyTyping(true);
       setIsUserScrolling(false);
@@ -344,32 +315,44 @@ export default function ChatsPage() {
         });
 
         const data = await response.json();
+        const vallyResponse = data.response || 'Sorry, I couldn\'t process that. Try again!';
         
-        const vallyMsg = {
-          sender: { _id: 'vally', firstName: 'Vally', lastName: 'AI' },
-          message: data.response || 'Sorry, I couldn\'t process that. Try again!',
-          createdAt: new Date().toISOString(),
+        // Send both user message and Vally response to backend to save in DB
+        const chatResponse = await api.post('/chat/send', {
+          receiverId: selectedUserId,
+          message: newMessage,
           isVally: true,
-          messageType: 'text',
-          tempId: `vally-${Date.now()}`
-        };
-        setMessages(prev => [...prev, vallyMsg]);
+          vallyResponse: vallyResponse
+        });
+
+        // The backend returns both messages [userMessage, vallyMessage]
+        const [userMessage, vallyMessage] = chatResponse.data.data;
+        
+        // Update UI with both messages
+        setMessages(prev => [...prev, userMessage, vallyMessage]);
         setIsUserScrolling(false);
         
-        // Save Vally messages to localStorage
-        const vallyMessages = [...messages, userMsg, vallyMsg].filter(msg => msg.isVally || msg.sender?._id === 'vally' || msg.tempId?.startsWith('temp-'));
-        localStorage.setItem(`chatMessages_${selectedUserId}`, JSON.stringify(vallyMessages));
+        // Emit both messages via socket so the other user sees them in real-time
+        socket.emit('send_message', {
+          senderId: user.id,
+          receiverId: selectedUserId,
+          message: newMessage,
+          _id: userMessage._id
+        });
+        
+        socket.emit('send_message', {
+          senderId: user.id,
+          receiverId: selectedUserId,
+          message: vallyResponse,
+          _id: vallyMessage._id,
+          isVally: true
+        });
+        
+        socket.emit('stop_typing', { senderId: user.id, receiverId: selectedUserId });
+        fetchConversations();
       } catch (err) {
         console.error('Vally error:', err);
-        const errorMsg = {
-          sender: { _id: 'vally', firstName: 'Vally', lastName: 'AI' },
-          message: 'Oops! I had a hiccup. Try asking me again! 😊',
-          createdAt: new Date().toISOString(),
-          isVally: true,
-          tempId: `vally-error-${Date.now()}`
-        };
-        setMessages(prev => [...prev, errorMsg]);
-        setIsUserScrolling(false);
+        showNotification('Failed to reach Vally. Try again!', 'error');
       } finally {
         setVallyTyping(false);
       }
@@ -653,16 +636,31 @@ export default function ChatsPage() {
                                       </svg>
                                       View
                                     </button>
-                                    <a
-                                      href={msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`}
-                                      download={msg.fileName}
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          const fileUrl = msg.fileUrl.startsWith('http') ? msg.fileUrl : `${SERVER_URL}${msg.fileUrl}`;
+                                          const response = await fetch(fileUrl);
+                                          const blob = await response.blob();
+                                          const url = window.URL.createObjectURL(blob);
+                                          const a = document.createElement('a');
+                                          a.href = url;
+                                          a.download = msg.fileName || 'download';
+                                          document.body.appendChild(a);
+                                          a.click();
+                                          window.URL.revokeObjectURL(url);
+                                          document.body.removeChild(a);
+                                        } catch (error) {
+                                          console.error('Download failed:', error);
+                                        }
+                                      }}
                                       className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
                                     >
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                       </svg>
                                       Download
-                                    </a>
+                                    </button>
                                   </div>
                                 </div>
                               )}
