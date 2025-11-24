@@ -7,24 +7,32 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     host: 'smtp.gmail.com',
     port: 587,
-    secure: false, // Use TLS
+    secure: false,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
     tls: {
-        rejectUnauthorized: false
-    }
+        rejectUnauthorized: false,
+        ciphers: 'SSLv3'
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 10
 });
 
 // Make sure email is properly configured
 transporter.verify(function(error, success) {
     if (error) {
-        console.log('Email configuration error:', error);
-        console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'Set' : 'Not set');
-        console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'Set' : 'Not set');
+        console.error('⚠️  Email configuration warning:', error.message);
+        console.log('EMAIL_USER:', process.env.EMAIL_USER ? `${process.env.EMAIL_USER.substring(0, 3)}***` : 'Not set');
+        console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'Set (length: ' + process.env.EMAIL_PASS.length + ')' : 'Not set');
+        console.log('Note: Email will be attempted when needed. Verify error might be due to network conditions.');
     } else {
-        console.log('Email server is ready to send messages');
+        console.log('✅ Email server is ready to send messages');
     }
 });
 
