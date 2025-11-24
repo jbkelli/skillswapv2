@@ -5,9 +5,15 @@ const nodemailer = require('nodemailer');
 // Set up email sending with Gmail
 const transporter = nodemailer.createTransport({
     service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // Use TLS
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+    },
+    tls: {
+        rejectUnauthorized: false
     }
 });
 
@@ -15,9 +21,40 @@ const transporter = nodemailer.createTransport({
 transporter.verify(function(error, success) {
     if (error) {
         console.log('Email configuration error:', error);
-        console.log('Please configure EMAIL_USER and EMAIL_PASS in your .env file');
+        console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'Set' : 'Not set');
+        console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'Set' : 'Not set');
     } else {
         console.log('Email server is ready to send messages');
+    }
+});
+
+// Test endpoint to check email configuration
+router.get('/test-email-config', async (req, res) => {
+    try {
+        const hasUser = !!process.env.EMAIL_USER;
+        const hasPass = !!process.env.EMAIL_PASS;
+        
+        if (!hasUser || !hasPass) {
+            return res.json({
+                configured: false,
+                EMAIL_USER: hasUser,
+                EMAIL_PASS: hasPass,
+                message: 'Email credentials not properly configured'
+            });
+        }
+        
+        await transporter.verify();
+        res.json({
+            configured: true,
+            message: 'Email is properly configured and ready to send',
+            user: process.env.EMAIL_USER
+        });
+    } catch (error) {
+        res.status(500).json({
+            configured: false,
+            error: error.message,
+            message: 'Email configuration test failed'
+        });
     }
 });
 
@@ -58,10 +95,27 @@ router.post('/send', async (req, res) => {
 
         res.status(200).json({ message: 'Email sent successfully' });
     } catch (err) {
-        console.error('Email error:', err);
+        console.error('Email error details:', {
+            message: err.message,
+            code: err.code,
+            command: err.command,
+            response: err.response,
+            responseCode: err.responseCode
+        });
+        
+        let errorMessage = 'Failed to send email. ';
+        
+        if (err.code === 'EAUTH') {
+            errorMessage += 'Authentication failed. Please check email credentials.';
+        } else if (err.code === 'ESOCKET') {
+            errorMessage += 'Connection error. Please try again.';
+        } else {
+            errorMessage += 'Please try again later.';
+        }
+        
         res.status(500).json({ 
-            message: 'Failed to send email. Please check email configuration.',
-            error: err.message 
+            message: errorMessage,
+            details: process.env.NODE_ENV === 'development' ? err.message : undefined
         });
     }
 });
