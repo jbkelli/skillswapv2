@@ -479,18 +479,23 @@ export default function ChatsPage() {
                             alt={`${conv.user.firstName} ${conv.user.lastName}`}
                             className="w-12 h-12 rounded-full object-cover"
                             onError={(e) => {
-                              e.target.onerror = null;
                               e.target.style.display = 'none';
                               e.target.nextElementSibling.style.display = 'flex';
                             }}
                           />
-                        ) : null}
-                        <div 
-                          className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold"
-                          style={{ display: getProfilePicture(conv.user) ? 'none' : 'flex' }}
-                        >
-                          {conv.user.firstName?.[0]}{conv.user.lastName?.[0]}
-                        </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold">
+                            {conv.user.firstName?.[0]}{conv.user.lastName?.[0]}
+                          </div>
+                        )}
+                        {getProfilePicture(conv.user) && (
+                          <div 
+                            className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold"
+                            style={{ display: 'none' }}
+                          >
+                            {conv.user.firstName?.[0]}{conv.user.lastName?.[0]}
+                          </div>
+                        )}
                         <div className="absolute bottom-0 right-0">
                           <OnlineIndicator 
                             isOnline={userStatuses[conv.user._id]?.isOnline ?? conv.user.isOnline ?? false}
@@ -548,18 +553,23 @@ export default function ChatsPage() {
                         alt={`${otherUser.firstName} ${otherUser.lastName}`}
                         className="w-10 h-10 rounded-full object-cover"
                         onError={(e) => {
-                          e.target.onerror = null;
                           e.target.style.display = 'none';
                           e.target.nextElementSibling.style.display = 'flex';
                         }}
                       />
-                    ) : null}
-                    <div 
-                      className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold"
-                      style={{ display: getProfilePicture(otherUser) ? 'none' : 'flex' }}
-                    >
-                      {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
-                    </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold">
+                        {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
+                      </div>
+                    )}
+                    {getProfilePicture(otherUser) && (
+                      <div 
+                        className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold"
+                        style={{ display: 'none' }}
+                      >
+                        {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
+                      </div>
+                    )}
                     <div className="absolute bottom-0 right-0">
                       <OnlineIndicator 
                         isOnline={userStatuses[selectedUserId]?.isOnline ?? otherUser.isOnline ?? false}
