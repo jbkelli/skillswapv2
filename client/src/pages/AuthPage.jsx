@@ -101,7 +101,7 @@ function AuthPage() {
               }`}
             >
               {isLoginView && (
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 opacity-100"></div>
+                <div className="absolute inset-0 bg-linear-to-r from-cyan-500 to-blue-500 opacity-100"></div>
               )}
               <span className="relative z-10">Log In</span>
             </button>
@@ -114,7 +114,7 @@ function AuthPage() {
               }`}
             >
               {!isLoginView && (
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 opacity-100"></div>
+                <div className="absolute inset-0 bg-linear-to-r from-cyan-500 to-blue-500 opacity-100"></div>
               )}
               <span className="relative z-10">Sign Up</span>
             </button>

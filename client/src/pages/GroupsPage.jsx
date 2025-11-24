@@ -544,7 +544,7 @@ export default function GroupsPage() {
                             <div
                               className={`rounded-2xl px-4 py-3 ${
                                 isVallyMessage
-                                  ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white rounded-bl-none'
+                                  ? 'bg-linear-to-r from-purple-600 to-fuchsia-600 text-white rounded-bl-none'
                                   : isMyMessage
                                   ? 'bg-blue-600 text-white rounded-br-none'
                                   : 'bg-gray-800 text-gray-100 rounded-bl-none'
@@ -619,7 +619,7 @@ export default function GroupsPage() {
                   })}
                   {vallyTyping && (
                     <div className="flex justify-start">
-                      <div className="rounded-2xl px-4 py-3 rounded-bl-none bg-gradient-to-r from-purple-600 to-fuchsia-600">
+                      <div className="rounded-2xl px-4 py-3 rounded-bl-none bg-linear-to-r from-purple-600 to-fuchsia-600">
                         <p className="text-xs text-pink-200 mb-1">🤖 Vally AI is thinking...</p>
                         <div className="flex gap-1">
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
