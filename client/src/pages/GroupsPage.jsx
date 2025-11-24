@@ -529,7 +529,7 @@ export default function GroupsPage() {
                           </div>
                         )}
                         
-                        <div className={`flex ${isVallyMessage ? 'justify-center' : isMyMessage ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`flex ${isVallyMessage ? 'justify-start' : isMyMessage ? 'justify-end' : 'justify-start'}`}>
                           <div className="max-w-[70%]">
                             {!isMyMessage && msg.sender && !isVallyMessage && (
                               <p className="text-xs mb-1 text-gray-400">
@@ -537,14 +537,14 @@ export default function GroupsPage() {
                               </p>
                             )}
                             {isVallyMessage && (
-                              <p className="text-xs mb-1 text-purple-400 font-semibold text-center">
+                              <p className="text-xs mb-1 text-pink-400 font-semibold">
                                 🤖 Vally AI (asked by {msg.vallyTriggeredBy?.firstName || 'someone'})
                               </p>
                             )}
                             <div
                               className={`rounded-2xl px-4 py-3 ${
                                 isVallyMessage
-                                  ? 'bg-linear-to-br from-purple-600 to-pink-600 text-white'
+                                  ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white rounded-bl-none'
                                   : isMyMessage
                                   ? 'bg-blue-600 text-white rounded-br-none'
                                   : 'bg-gray-800 text-gray-100 rounded-bl-none'
@@ -618,9 +618,9 @@ export default function GroupsPage() {
                     );
                   })}
                   {vallyTyping && (
-                    <div className="flex justify-center">
-                      <div className="rounded-2xl px-4 py-3 bg-linear-to-br from-purple-600 to-pink-600">
-                        <p className="text-xs text-purple-200 mb-1">🤖 Vally AI is thinking...</p>
+                    <div className="flex justify-start">
+                      <div className="rounded-2xl px-4 py-3 rounded-bl-none bg-gradient-to-r from-purple-600 to-fuchsia-600">
+                        <p className="text-xs text-pink-200 mb-1">🤖 Vally AI is thinking...</p>
                         <div className="flex gap-1">
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>

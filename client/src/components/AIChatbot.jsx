@@ -129,7 +129,7 @@ export default function AIChatbot() {
         <div className="fixed bottom-24 right-6 z-50">
           <button
             onClick={() => setIsOpen(true)}
-            className="bg-pink-600 text-white px-6 py-4 rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center gap-2"
+            className="bg-linear-to-r from-purple-600 to-fuchsia-600 text-white px-6 py-4 rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center gap-2"
           >
             <span className="font-bold text-lg">VALLY</span>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,7 +143,7 @@ export default function AIChatbot() {
       {isOpen && (
         <div className="fixed bottom-24 right-6 w-96 h-[600px] bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl z-50 flex flex-col">
           {/* Header */}
-          <div className="bg-pink-600 p-4 rounded-t-2xl flex justify-between items-center shrink-0">
+          <div className="bg-linear-to-r from-purple-600 to-fuchsia-600 p-4 rounded-t-2xl flex justify-between items-center shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center font-bold text-pink-600">
                 V
@@ -232,7 +232,7 @@ export default function AIChatbot() {
                     <button
                       onClick={handleSendChat}
                       disabled={loading || !input.trim()}
-                      className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-500 transition-colors disabled:opacity-50 text-sm font-semibold"
+                      className="bg-linear-to-r from-purple-600 to-fuchsia-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-sm font-semibold"
                     >
                       Send
                     </button>
@@ -300,7 +300,7 @@ export default function AIChatbot() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-pink-600 text-white py-2 rounded-lg hover:bg-pink-500 transition-colors font-semibold disabled:opacity-50"
+                    className="w-full bg-linear-to-r from-purple-600 to-fuchsia-600 text-white py-2 rounded-lg hover:opacity-90 transition-opacity font-semibold disabled:opacity-50"
                   >
                     {loading ? 'Generating...' : 'Generate Email'}
                   </button>

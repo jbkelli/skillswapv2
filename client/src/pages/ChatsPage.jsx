@@ -577,7 +577,7 @@ export default function ChatsPage() {
                           </div>
                         )}
                         
-                        <div className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`flex ${isVallyMessage ? 'justify-start' : isMyMessage ? 'justify-end' : 'justify-start'}`}>
                           <div className={`max-w-[70%] ${isMyMessage ? 'order-2' : 'order-1'}`}>
                             {!isMyMessage && (
                               <p className={`text-xs mb-1 ${isVallyMessage ? 'text-pink-400 font-semibold' : 'text-gray-400'}`}>
@@ -586,10 +586,10 @@ export default function ChatsPage() {
                             )}
                             <div
                               className={`rounded-2xl px-4 py-3 ${
-                                isMyMessage
+                                isVallyMessage
+                                  ? 'bg-linear-to-r from-purple-600 to-fuchsia-600 text-white rounded-bl-none'
+                                  : isMyMessage
                                   ? 'bg-blue-600 text-white rounded-br-none'
-                                  : isVallyMessage
-                                  ? 'bg-pink-600 text-white rounded-bl-none'
                                   : 'bg-gray-800 text-gray-100 rounded-bl-none'
                               }`}
                             >
@@ -678,7 +678,7 @@ export default function ChatsPage() {
                   {(isTyping || vallyTyping) && (
                     <div className="flex justify-start">
                     <div className={`rounded-2xl px-4 py-3 rounded-bl-none ${
-                      vallyTyping ? 'bg-pink-600' : 'bg-gray-800'
+                      vallyTyping ? 'bg-linear-to-r from-purple-600 to-fuchsia-600' : 'bg-gray-800'
                     }`}>
                         {vallyTyping && <p className="text-xs text-pink-200 mb-1">🤖 Vally AI</p>}
                         <div className="flex gap-1">

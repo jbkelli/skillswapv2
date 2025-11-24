@@ -163,7 +163,7 @@ export default function SignupForm() {
 
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-500 transition-all duration-300 mt-2"
+        className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold py-3 rounded-lg hover:from-cyan-400 hover:to-blue-500 transition-all duration-300 mt-2 shadow-lg shadow-cyan-500/50 hover:shadow-cyan-500/70 hover:scale-[1.02] active:scale-[0.98]"
       >
         Sign Up
       </button>
