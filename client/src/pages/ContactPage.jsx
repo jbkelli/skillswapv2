@@ -46,7 +46,7 @@ export default function ContactPage() {
       // Using EmailJS to send email directly from client
       const result = await window.emailjs.send(
         'service_9azunie',   
-        'YOUR_Ttemplate_lo2bja8EMPLATE_ID', 
+        'template_lo2bja8', 
         {
           from_name: formData.name,
           from_email: formData.email,
