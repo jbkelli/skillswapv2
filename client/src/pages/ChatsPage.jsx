@@ -29,7 +29,6 @@ export default function ChatsPage() {
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [userStatuses, setUserStatuses] = useState({});
-  const [imageErrors, setImageErrors] = useState({});
   
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -40,15 +39,7 @@ export default function ChatsPage() {
 
   // Helper function to get profile picture URL
   const getProfilePicture = (user) => {
-    if (!user) return null;
-    const picUrl = user.profilePicture || user.profilePic || user.profileImage;
-    if (!picUrl) return null;
-    // If it's already a full URL, return it
-    if (picUrl.startsWith('http')) return picUrl;
-    // If it starts with /, don't add another /
-    if (picUrl.startsWith('/')) return `${SERVER_URL}${picUrl}`;
-    // Otherwise, add the /
-    return `${SERVER_URL}/${picUrl}`;
+    return user?.profilePicture || user?.profilePic || user?.profileImage;
   };
 
   // Initialize socket connection once
@@ -474,17 +465,12 @@ export default function ChatsPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        {getProfilePicture(conv.user) && !imageErrors[conv.user._id] ? (
-                          <>
-                            <img 
-                              src={getProfilePicture(conv.user)} 
-                              alt={`${conv.user.firstName} ${conv.user.lastName}`}
-                              className="w-12 h-12 rounded-full object-cover"
-                              onError={() => {
-                                setImageErrors(prev => ({ ...prev, [conv.user._id]: true }));
-                              }}
-                            />
-                          </>
+                        {getProfilePicture(conv.user) ? (
+                          <img 
+                            src={getProfilePicture(conv.user)} 
+                            alt={`${conv.user.firstName} ${conv.user.lastName}`}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
                         ) : (
                           <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold">
                             {conv.user.firstName?.[0]}{conv.user.lastName?.[0]}
@@ -541,17 +527,12 @@ export default function ChatsPage() {
                     </svg>
                   </button>
                   <div className="relative">
-                    {getProfilePicture(otherUser) && !imageErrors[selectedUserId] ? (
-                      <>
-                        <img 
-                          src={getProfilePicture(otherUser)} 
-                          alt={`${otherUser.firstName} ${otherUser.lastName}`}
-                          className="w-10 h-10 rounded-full object-cover"
-                          onError={() => {
-                            setImageErrors(prev => ({ ...prev, [selectedUserId]: true }));
-                          }}
-                        />
-                      </>
+                    {getProfilePicture(otherUser) ? (
+                      <img 
+                        src={getProfilePicture(otherUser)} 
+                        alt={`${otherUser.firstName} ${otherUser.lastName}`}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold">
                         {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
