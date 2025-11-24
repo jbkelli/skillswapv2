@@ -6,11 +6,9 @@ import { AuthProvider } from './context/AuthContext.jsx'
 import { NotificationProvider } from './context/NotificationContext.jsx'
 import { ChatNotificationProvider } from './context/ChatNotificationContext.jsx'
 import { BrowserRouter } from 'react-router-dom'
-import ErrorBoundary from './components/ErrorBoundary.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ErrorBoundary>
       <NotificationProvider>
         <AuthProvider>
           <BrowserRouter>
@@ -20,6 +18,5 @@ createRoot(document.getElementById('root')).render(
           </BrowserRouter>
         </AuthProvider>
       </NotificationProvider>
-    </ErrorBoundary>
   </StrictMode>,
 )
