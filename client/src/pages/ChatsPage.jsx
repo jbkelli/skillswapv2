@@ -42,7 +42,12 @@ export default function ChatsPage() {
     if (!user) return null;
     const picUrl = user.profilePicture || user.profilePic || user.profileImage;
     if (!picUrl) return null;
-    return picUrl.startsWith('http') ? picUrl : `${SERVER_URL}${picUrl}`;
+    // If it's already a full URL, return it
+    if (picUrl.startsWith('http')) return picUrl;
+    // If it starts with /, don't add another /
+    if (picUrl.startsWith('/')) return `${SERVER_URL}${picUrl}`;
+    // Otherwise, add the /
+    return `${SERVER_URL}/${picUrl}`;
   };
 
   // Initialize socket connection once
@@ -473,12 +478,19 @@ export default function ChatsPage() {
                             src={getProfilePicture(conv.user)} 
                             alt={`${conv.user.firstName} ${conv.user.lastName}`}
                             className="w-12 h-12 rounded-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.style.display = 'none';
+                              e.target.nextElementSibling.style.display = 'flex';
+                            }}
                           />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold">
-                            {conv.user.firstName?.[0]}{conv.user.lastName?.[0]}
-                          </div>
-                        )}
+                        ) : null}
+                        <div 
+                          className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold"
+                          style={{ display: getProfilePicture(conv.user) ? 'none' : 'flex' }}
+                        >
+                          {conv.user.firstName?.[0]}{conv.user.lastName?.[0]}
+                        </div>
                         <div className="absolute bottom-0 right-0">
                           <OnlineIndicator 
                             isOnline={userStatuses[conv.user._id]?.isOnline ?? conv.user.isOnline ?? false}
@@ -535,12 +547,19 @@ export default function ChatsPage() {
                         src={getProfilePicture(otherUser)} 
                         alt={`${otherUser.firstName} ${otherUser.lastName}`}
                         className="w-10 h-10 rounded-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                          e.target.nextElementSibling.style.display = 'flex';
+                        }}
                       />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold">
-                        {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
-                      </div>
-                    )}
+                    ) : null}
+                    <div 
+                      className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold"
+                      style={{ display: getProfilePicture(otherUser) ? 'none' : 'flex' }}
+                    >
+                      {otherUser.firstName?.[0]}{otherUser.lastName?.[0]}
+                    </div>
                     <div className="absolute bottom-0 right-0">
                       <OnlineIndicator 
                         isOnline={userStatuses[selectedUserId]?.isOnline ?? otherUser.isOnline ?? false}
